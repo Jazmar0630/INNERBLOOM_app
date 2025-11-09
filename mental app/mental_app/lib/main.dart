@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'pages/mood_tracker_screen.dart';
 
 void main() async {
@@ -172,7 +171,7 @@ class DashboardPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.teal[900],
+                color: Colors.teal.shade900,
               ),
             ),
             SizedBox(height: 15),
@@ -229,7 +228,7 @@ class DashboardPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.teal[900],
+                color: Colors.teal.shade900,
               ),
             ),
             SizedBox(height: 15),
@@ -261,7 +260,7 @@ class DashboardPage extends StatelessWidget {
             ),
           ],
         ),
-      ),  
+      ),
     );
   }
 
@@ -299,7 +298,7 @@ class DashboardPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.teal[900],
+                color: Colors.teal.shade900,
               ),
             ),
           ],
@@ -345,7 +344,7 @@ class RelaxationPage extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.teal[900],
+              color: Colors.teal.shade900,
             ),
           ),
           SizedBox(height: 20),
@@ -480,9 +479,10 @@ class _BreathingExerciseState extends State<BreathingExercise>
       vsync: this,
     );
     _animation = Tween<double>(begin: 100, end: 200).animate(_controller)
-      ..addListener(() {
-        setState(() {});
-      });
+  ..addListener(() {
+    setState(() {});
+  });
+
   }
 
   void _startExercise() {
