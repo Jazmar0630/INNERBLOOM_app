@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'pages/mood_tracker_screen.dart';
+import 'pages/mood_tracker_screen.dart';  
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,7 +76,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     DashboardPage(),
-    MoodTrackerPage(),
+    MoodTrackerScreen(),
     RelaxationPage(),
     JournalPage(),
   ];
@@ -189,7 +189,7 @@ class DashboardPage extends StatelessWidget {
                   Icons.sentiment_satisfied_alt,
                   Colors.orange,
                   () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => MoodTrackerPage())),
+                      MaterialPageRoute(builder: (context) => MoodTrackerScreen())),
                 ),
                 _buildQuickActionCard(
                   context,
