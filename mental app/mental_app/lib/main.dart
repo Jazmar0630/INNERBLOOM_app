@@ -6,9 +6,11 @@ import 'pages/mood_tracker_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MentalHealthApp());
 }
-
 // 👇 Add here
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
