@@ -30,7 +30,11 @@ class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
-            Text('Never'), Text('Rarely'), Text('Sometimes'), Text('Often'), Text('Always'),
+            Text('Never', style: TextStyle(color: Colors.white)),
+            Text('Rarely', style: TextStyle(color: Colors.white)),
+            Text('Sometimes', style: TextStyle(color: Colors.white)),
+            Text('Often', style: TextStyle(color: Colors.white)),
+            Text('Always', style: TextStyle(color: Colors.white)),
           ],
         ),
         const SizedBox(height: 18),
@@ -41,36 +45,53 @@ class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('MOOD TRACKING')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            _sliderBlock('Do you often feel restless or on edge?', q1, (v)=>setState(()=>q1=v)),
-            _sliderBlock('Have you been feeling down, hopeless, or sad most days?', q2, (v)=>setState(()=>q2=v)),
-            _sliderBlock('Do you often feel overwhelmed by responsibilities?', q3, (v)=>setState(()=>q3=v)),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FloatingActionButton(
-                heroTag: 'next1',
-                onPressed: () {
-                  // store answers into the shared data bag
-                  widget.data.answers['restless'] = q1;
-                  widget.data.answers['down'] = q2;
-                  widget.data.answers['overwhelmed'] = q3;
+      appBar: AppBar(title: const Text('MOOD TRACKING'),
+      backgroundColor: Colors.transparent,
+       elevation: 0,),
+       extendBodyBehindAppBar: true,
+      body: Container(
+  decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color(0xFF475569), // slate-700
+        Color(0xFF64748B), // slate-500
+        Color(0xFFCBD5E1), // slate-300
+      ],
+    ),
+  ),
+  child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              children: [
+                _sliderBlock('Do you often feel restless or on edge?', q1, (v) => setState(() => q1 = v)),
+                _sliderBlock('Have you been feeling down, hopeless, or sad most days?', q2, (v) => setState(() => q2 = v)),
+                _sliderBlock('Do you often feel overwhelmed by responsibilities?', q3, (v) => setState(() => q3 = v)),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FloatingActionButton(
+                    heroTag: 'next1',
+                    onPressed: () {
+                      widget.data.answers['restless'] = q1;
+                      widget.data.answers['down'] = q2;
+                      widget.data.answers['overwhelmed'] = q3;
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MoodSurveyPageTwo(data: widget.data),
-                    ),
-                  );
-                },
-                child: const Icon(Icons.arrow_forward),
-              ),
-            )
-          ],
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MoodSurveyPageTwo(data: widget.data),
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.arrow_forward),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
