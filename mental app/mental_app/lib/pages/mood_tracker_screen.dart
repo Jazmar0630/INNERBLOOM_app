@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'mood_survey_page_one.dart';
+
+enum Mood { happy, good, moderate, sad, awful }
+
+class MoodSurveyData {
+  Mood? selectedMood;                    // from page 1
+  final Map<String, double> answers = {}; // slider answers across pages
+  MoodSurveyData({this.selectedMood});
+}
 
 class MoodTrackerScreen extends StatefulWidget {
   const MoodTrackerScreen({Key? key}) : super(key: key);
@@ -19,6 +28,38 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     {'emoji': '☹️', 'label': 'SAD', 'value': 2},
     {'emoji': '😢', 'label': 'AWFUL', 'value': 1},
   ];
+// 👇 Paste this helper function here
+  Widget _moodEmoji(Mood mood, String emoji, String label) {
+    return Column(
+      children: [
+        InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            final data = MoodSurveyData(selectedMood: mood);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MoodSurveyPageOne(data: data),
+              ),
+            );
+          },
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.teal.withOpacity(0.1),
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 28),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
 
   Future<void> saveMoodToFirebase() async {
     if (selectedMoodIndex == null) return;
@@ -67,87 +108,40 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             ],
           ),
         ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'MOOD TRACKING',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Main Content
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'HOW DO YOU FEEL TODAY?',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          SizedBox(height: 60),
-
-                          // Mood Options
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              moods.length,
-                              (index) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: _buildMoodOption(index),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Floating Next Button
-              Positioned(
-                bottom: 32,
-                right: 32,
-                child: FloatingActionButton(
-                  onPressed: selectedMoodIndex != null ? saveMoodToFirebase : null,
-                  backgroundColor: selectedMoodIndex != null
-                      ? Color(0xFF475569)
-                      : Color(0xFF94A3B8),
-                  child: Icon(
-                    Icons.arrow_forward,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+        child: SafeArea(  
+          child: Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'HOW DO YOU FEEL TODAY?',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+            color: Colors.white,
           ),
+        ),
+        const SizedBox(height: 24),
+
+        // -------- EMOJI STRIP --------
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          alignment: WrapAlignment.center,
+          children: [
+            _moodEmoji(Mood.happy, '😁', 'Happy'),
+            _moodEmoji(Mood.good, '😊', 'Good'),
+            _moodEmoji(Mood.moderate, '😐', 'Moderate'),
+            _moodEmoji(Mood.sad, '😞', 'Sad'),
+            _moodEmoji(Mood.awful, '😭', 'Awful'),
+                    ],
+            ),
+                // -------- EMOJI STRIP END --------
+             ],
+            ),
+          ),  
+           
         ),
       ),
     );
