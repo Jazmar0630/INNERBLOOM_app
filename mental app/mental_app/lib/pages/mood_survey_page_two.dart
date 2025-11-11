@@ -1,5 +1,5 @@
  import 'package:flutter/material.dart';
-import 'mood_tracker_screen.dart'; // for MoodSurveyData
+import 'mood_tracker_screen.dart'; // provides MoodSurveyData
 
 class MoodSurveyPageTwo extends StatefulWidget {
   final MoodSurveyData data;
@@ -10,20 +10,15 @@ class MoodSurveyPageTwo extends StatefulWidget {
 }
 
 class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
-  double q4 = 2;
-  double q5 = 2;
-  double q6 = 2;
+  double q4 = 2, q5 = 2, q6 = 2;
 
   Widget _sliderBlock(String question, double value, ValueChanged<double> onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(question, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-        Slider(
-          value: value,
-          min: 0, max: 4, divisions: 4,
-          onChanged: onChanged,
-        ),
+        Text(question,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+        Slider(value: value, min: 0, max: 4, divisions: 4, onChanged: onChanged),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
@@ -44,8 +39,6 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
     widget.data.answers['out_of_control'] = q5;
     widget.data.answers['disconnected'] = q6;
 
-    // TODO: Save to Firestore/SharedPreferences here if needed.
-
     Navigator.popUntil(context, (route) => route.isFirst);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Responses saved')),
@@ -55,47 +48,58 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('MOOD TRACKING'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      extendBodyBehindAppBar: true,
-      body: Container(
+      body: Stack(
+        children: [
+          const _GradientBg(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: ListView(
+                children: [
+                  _sliderBlock('Do you feel detached from others or emotionally numb?', q4, (v)=>setState(()=>q4=v)),
+                  _sliderBlock('Do your emotions feel out of control or unpredictable lately?', q5, (v)=>setState(()=>q5=v)),
+                  _sliderBlock('Do you ever feel disconnected from yourself or your surroundings?', q6, (v)=>setState(()=>q6=v)),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FloatingActionButton.extended(
+                      heroTag: 'finish',
+                      icon: const Icon(Icons.check),
+                      label: const Text('Finish'),
+                      onPressed: _finish,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GradientBg extends StatelessWidget {
+  const _GradientBg();
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF475569),
-              Color(0xFF64748B),
-              Color(0xFFCBD5E1),
-            ],
+            colors: [Color(0xFF475569), Color(0xFF64748B), Color(0xFFCBD5E1)],
           ),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: ListView(
-              children: [
-                _sliderBlock('Do you feel detached from others or emotionally numb?', q4, (v) => setState(() => q4 = v)),
-                _sliderBlock('Do your emotions feel out of control or unpredictable lately?', q5, (v) => setState(() => q5 = v)),
-                _sliderBlock('Do you ever feel disconnected from yourself or your surroundings?', q6, (v) => setState(() => q6 = v)),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FloatingActionButton.extended(
-                    heroTag: 'finish',
-                    icon: const Icon(Icons.check),
-                    label: const Text('Finish'),
-                    onPressed: _finish,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+      );
 }
