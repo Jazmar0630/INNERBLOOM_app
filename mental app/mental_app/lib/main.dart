@@ -9,6 +9,15 @@ void main() async {
   runApp(MentalHealthApp());
 }
 
+// 👇 Add here
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MentalHealthApp();
+  }
+}
 class MentalHealthApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
