@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'onboarding_intro_page.dart'; // <-- make sure this file exists
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, this.displayName = 'amad!'});
+  const HomePage({super.key, this.displayName = 'User!'});
   final String displayName;
 
   @override
@@ -17,19 +17,31 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBody: true,
       // Bottom navigation bar (4 items)
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.bubble_chart_outlined), label: 'Mood'),
-          BottomNavigationBarItem(icon: Icon(Icons.spa_outlined), label: 'Relax'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-      ),
+     bottomNavigationBar: BottomNavigationBar(
+  type: BottomNavigationBarType.fixed,
+  currentIndex: _navIndex,
+  onTap: (i) {
+    // keep the visual selection
+    setState(() => _navIndex = i);
+
+    // only the button BESIDE Home (index 1) navigates
+    if (i == 1) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+      );
+    }
+    // indices 0 (Home), 2 (Relax), 3 (Profile) do nothing
+  },
+  showSelectedLabels: false,
+  showUnselectedLabels: false,
+  items: const [
+    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+    BottomNavigationBarItem(icon: Icon(Icons.psychology_alt_outlined), label: 'Figure it out'),
+    BottomNavigationBarItem(icon: Icon(Icons.spa_outlined), label: 'Relax'),
+    BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+  ],
+),
+
 
       body: Container(
         decoration: const BoxDecoration(

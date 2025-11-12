@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart'; // 👈 make sure you have this file (your mood homepage)
-import 'pages/onboarding_intro_page.dart'; // 👈 make sure you have this file
+ 
 
 void main() {
   runApp(const InnerBloomApp());
