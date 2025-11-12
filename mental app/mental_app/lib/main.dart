@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/welcome_page.dart';
-import 'pages/home_page.dart';             // used after sign up
+ 
 
  
 

@@ -1,5 +1,6 @@
- import 'package:flutter/material.dart';
-import 'onboarding_intro_page.dart';
+ // lib/pages/signup_page.dart
+import 'package:flutter/material.dart';
+import 'welcome_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -17,6 +18,15 @@ class _SignUpPageState extends State<SignUpPage> {
   bool agreeToPolicy = false;
 
   @override
+  void dispose() {
+    _username.dispose();
+    _email.dispose();
+    _password.dispose();
+    _confirmPassword.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -29,12 +39,13 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const SizedBox(height: 8),
                   const Text(
                     'Sign Up',
                     textAlign: TextAlign.center,
@@ -50,20 +61,14 @@ class _SignUpPageState extends State<SignUpPage> {
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 28),
 
                   // Username
                   TextFormField(
                     controller: _username,
-                    decoration: const InputDecoration(
-                      hintText: 'Username',
-                      fillColor: Colors.white,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                    decoration: _fieldDecoration('Username'),
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? 'Enter a username' : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -71,15 +76,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextFormField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      hintText: 'Email',
-                      fillColor: Colors.white,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                    decoration: _fieldDecoration('Email'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Enter an email';
+                      if (!v.contains('@')) return 'Enter a valid email';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -87,15 +89,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextFormField(
                     controller: _password,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Password',
-                      fillColor: Colors.white,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                    decoration: _fieldDecoration('Password'),
+                    validator: (v) =>
+                        (v == null || v.length < 6) ? 'Min 6 characters' : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -103,15 +99,16 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextFormField(
                     controller: _confirmPassword,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Confirm Password',
-                      fillColor: Colors.white,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                    decoration: _fieldDecoration('Confirm Password'),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) {
+                        return 'Confirm your password';
+                      }
+                      if (v != _password.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -130,8 +127,9 @@ class _SignUpPageState extends State<SignUpPage> {
                       const Text(
                         'privacy policy',
                         style: TextStyle(
-                            color: Colors.lightBlueAccent,
-                            decoration: TextDecoration.underline),
+                          color: Colors.lightBlueAccent,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ],
                   ),
@@ -141,12 +139,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const OnboardingIntroPage(),
-                          ),
-                        );
+                        // TODO: perform your signup logic here
+                        // Go BACK to the Welcome page that pushed this screen.
+                        Navigator.pop(context);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -158,56 +153,37 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     child: const Text(
                       'SIGN UP',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.white, letterSpacing: 1),
                     ),
                   ),
-
                   const SizedBox(height: 20),
 
-                  // Or section
+                  // Divider "or"
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
                       Expanded(child: Divider(color: Colors.white38)),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text('or', style: TextStyle(color: Colors.white70)),
+                        child:
+                            Text('or', style: TextStyle(color: Colors.white70)),
                       ),
                       Expanded(child: Divider(color: Colors.white38)),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Social buttons
+                  // Social row (placeholders)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _socialButton(Icons.g_mobiledata, Colors.white),
+                      _socialButton(Icons.g_mobiledata),
                       const SizedBox(width: 16),
-                      _socialButton(Icons.facebook, Colors.white),
+                      _socialButton(Icons.facebook),
                       const SizedBox(width: 16),
-                      _socialButton(Icons.apple, Colors.white),
+                      _socialButton(Icons.apple),
                     ],
                   ),
-                  const SizedBox(height: 30),
-
-                  // Login link
-                  const Text.rich(
-                    TextSpan(
-                      text: 'Already have an account? ',
-                      style: TextStyle(color: Colors.white70),
-                      children: [
-                        TextSpan(
-                          text: 'Log in',
-                          style: TextStyle(
-                            color: Colors.lightBlueAccent,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -217,14 +193,25 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _socialButton(IconData icon, Color color) {
+  InputDecoration _fieldDecoration(String hint) {
+    return const InputDecoration(
+      fillColor: Colors.white,
+      filled: true,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide.none,
+      ),
+    ).copyWith(hintText: hint);
+  }
+
+  Widget _socialButton(IconData icon) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white70),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: color, size: 28),
+      child: Icon(icon, color: Colors.white, size: 28),
     );
   }
 }
