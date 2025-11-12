@@ -11,10 +11,9 @@ class MoodSurveyData {
 }
 
 class MoodTrackerScreen extends StatefulWidget {
-  const MoodTrackerScreen({Key? key}) : super(key: key);
-
-  @override
-  State<MoodTrackerScreen> createState() => _MoodTrackerScreenState();
+   const MoodTrackerScreen({Key? key}) : super(key: key);
+   @override
+   State<MoodTrackerScreen> createState() => _MoodTrackerScreenState();
 }
 
 class _MoodTrackerScreenState extends State<MoodTrackerScreen> {

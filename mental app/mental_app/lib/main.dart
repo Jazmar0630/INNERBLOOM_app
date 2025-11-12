@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/mood_tracker_screen.dart';  
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'pages/mood_welcome_page.dart';
+import 'pages/onboarding_intro_page.dart';
+
 
 
 void main() async {
@@ -204,7 +205,7 @@ class DashboardPage extends StatelessWidget {
                   Icons.sentiment_satisfied_alt,
                   Colors.orange,
                   () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => MoodTrackerScreen())),
+                      MaterialPageRoute(builder: (context) => OnboardingIntroPage())),
                 ),
                 _buildQuickActionCard(
                   context,
