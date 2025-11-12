@@ -1,5 +1,6 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'mood_tracker_screen.dart'; // provides MoodSurveyData
+import 'mood_survey_data.dart';
 
 class MoodSurveyPageTwo extends StatefulWidget {
   final MoodSurveyData data;
