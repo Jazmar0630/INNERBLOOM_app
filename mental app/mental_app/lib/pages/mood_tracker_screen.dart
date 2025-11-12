@@ -82,7 +82,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                   child: const Text('Start Survey'),
                 ),
               ),
-            ],
+            ],  
           ),
         ),
       ),
