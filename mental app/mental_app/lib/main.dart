@@ -1,12 +1,12 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'pages/onboarding_intro_page.dart';
-import 'pages/mood_tracker_screen.dart';
 import 'pages/mood_survey_page_one.dart';
 import 'pages/mood_survey_page_two.dart';
 import 'pages/mood_survey_data.dart';
 
 void main() {
-  runApp(const InnerBloomApp());
+  runApp(InnerBloomApp());
+
 }
 
 class InnerBloomApp extends StatelessWidget {
