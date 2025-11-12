@@ -1,8 +1,8 @@
  import 'package:flutter/material.dart';
-import 'signup_page.dart'; // 👈 link to the second page
+import 'signup_page.dart';
 
-class OnboardingIntroPage extends StatelessWidget {
-  const OnboardingIntroPage({super.key});
+class WelcomePage extends StatelessWidget {
+  const WelcomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,23 +23,30 @@ class OnboardingIntroPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(),
-                  // App name
+
+                  // App title
                   const Text(
-                    'InnerBloom',
+                    'Welcome to InnerBloom',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 20),
+
                   // Illustration
                   Image.asset(
-                    'assets/meditation.png', // <-- add your asset
+                    'assets/meditation.png', // Replace with your own image asset
                     height: 180,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 32),
+
+                  const SizedBox(height: 30),
+
+                  // Description text
                   const Text(
                     'Grow through what you go through.',
                     textAlign: TextAlign.center,
@@ -51,20 +58,22 @@ class OnboardingIntroPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'A gentle space for your mental well-being',
+                    'A gentle space for your mental well-being.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white70,
                     ),
                   ),
+
                   const Spacer(),
+
+                  // Get Started Button
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (_) => const SignUpPage()),
+                        MaterialPageRoute(builder: (_) => const SignUpPage()),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -77,9 +86,14 @@ class OnboardingIntroPage extends StatelessWidget {
                     ),
                     child: const Text(
                       'GET STARTED',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
+
                   const SizedBox(height: 60),
                 ],
               ),

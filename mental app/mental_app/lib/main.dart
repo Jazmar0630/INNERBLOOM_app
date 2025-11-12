@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'pages/home_page.dart'; // 👈 make sure you have this file (your mood homepage)
+import 'pages/welcome_page.dart';
+import 'pages/home_page.dart';             // used after sign up
+
  
 
 void main() {
@@ -18,7 +20,8 @@ class InnerBloomApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.teal,
       ),
-      home: const HomePage(), // 👈 start directly on your homepage
+      home: const WelcomePage(),
+
     );
   }
 }
