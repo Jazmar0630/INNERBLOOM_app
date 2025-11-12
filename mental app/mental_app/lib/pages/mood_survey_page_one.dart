@@ -51,7 +51,7 @@ class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
               const Spacer(),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: ElevatedButton(  
                   onPressed: () {
                     Navigator.push(
                       context,
