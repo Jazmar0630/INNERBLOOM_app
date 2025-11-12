@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'pages/home_page.dart'; //
 import 'pages/onboarding_intro_page.dart';
-import 'pages/mood_survey_page_one.dart';
-import 'pages/mood_survey_page_two.dart';
-import 'pages/mood_survey_data.dart';
+ 
 
 void main() {
   runApp(InnerBloomApp());
