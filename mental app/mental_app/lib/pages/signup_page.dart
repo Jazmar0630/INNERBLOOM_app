@@ -1,6 +1,7 @@
  // lib/pages/signup_page.dart
 import 'package:flutter/material.dart';
 import 'welcome_page.dart';
+import 'login_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -171,7 +172,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-
+              
                   // Social row (placeholders)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -184,6 +185,35 @@ class _SignUpPageState extends State<SignUpPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  // “Already have an account? Log in” link
+Center(
+  child: Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 6,
+    children: [
+      const Text(
+        'Already have an account?',
+        style: TextStyle(color: Colors.white70),
+      ),
+      InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+          );
+        },
+        child: const Text(
+          'Log in',
+          style: TextStyle(
+            color: Colors.lightBlueAccent,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+
                 ],
               ),
             ),
