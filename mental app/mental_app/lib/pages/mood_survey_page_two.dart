@@ -1,106 +1,65 @@
-import 'package:flutter/material.dart';
-import 'mood_tracker_screen.dart'; // provides MoodSurveyData
+ import 'package:flutter/material.dart';
 import 'mood_survey_data.dart';
+import 'mood_tracker_screen.dart'; // make sure this file exists
 
-class MoodSurveyPageTwo extends StatefulWidget {
+class MoodSurveyPageTwo extends StatelessWidget {
   final MoodSurveyData data;
   const MoodSurveyPageTwo({super.key, required this.data});
 
   @override
-  State<MoodSurveyPageTwo> createState() => _MoodSurveyPageTwoState();
-}
-
-class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
-  double q4 = 2, q5 = 2, q6 = 2;
-
-  Widget _sliderBlock(String question, double value, ValueChanged<double> onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(question,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-        Slider(value: value, min: 0, max: 4, divisions: 4, onChanged: onChanged),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('Never', style: TextStyle(color: Colors.white)),
-            Text('Rarely', style: TextStyle(color: Colors.white)),
-            Text('Sometimes', style: TextStyle(color: Colors.white)),
-            Text('Often', style: TextStyle(color: Colors.white)),
-            Text('Always', style: TextStyle(color: Colors.white)),
-          ],
-        ),
-        const SizedBox(height: 18),
-      ],
-    );
-  }
-
-  void _finish() {
-    widget.data.answers['detached'] = q4;
-    widget.data.answers['out_of_control'] = q5;
-    widget.data.answers['disconnected'] = q6;
-
-    Navigator.popUntil(context, (route) => route.isFirst);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Responses saved')),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('MOOD TRACKING'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Stack(
-        children: [
-          const _GradientBg(),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ListView(
-                children: [
-                  _sliderBlock('Do you feel detached from others or emotionally numb?', q4, (v)=>setState(()=>q4=v)),
-                  _sliderBlock('Do your emotions feel out of control or unpredictable lately?', q5, (v)=>setState(()=>q5=v)),
-                  _sliderBlock('Do you ever feel disconnected from yourself or your surroundings?', q6, (v)=>setState(()=>q6=v)),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FloatingActionButton.extended(
-                      heroTag: 'finish',
-                      icon: const Icon(Icons.check),
-                      label: const Text('Finish'),
-                      onPressed: _finish,
-                    ),
-                  ),
-                ],
+      appBar: AppBar(title: const Text('Mood Survey — Page 2')),
+      body: Container(
+        padding: const EdgeInsets.all(16),
+        color: Colors.black, // match MoodTracker background
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Quick check before you start:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text('Stress level: ${data.q1.toStringAsFixed(0)} / 4',
+                style: const TextStyle(color: Colors.white)),
+            Text('Sleep quality: ${data.q2.toStringAsFixed(0)} / 4',
+                style: const TextStyle(color: Colors.white)),
+            Text('Focus level: ${data.q3.toStringAsFixed(0)} / 4',
+                style: const TextStyle(color: Colors.white)),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Back'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    // This is the “Answer now” action that goes to Mood Tracker page
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MoodTrackerScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Answer now'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
-}
-
-class _GradientBg extends StatelessWidget {
-  const _GradientBg();
-  @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF475569), Color(0xFF64748B), Color(0xFFCBD5E1)],
-          ),
-        ),
-      );
 }
