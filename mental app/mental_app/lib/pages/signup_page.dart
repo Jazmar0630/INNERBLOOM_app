@@ -1,6 +1,5 @@
  // lib/pages/signup_page.dart
 import 'package:flutter/material.dart';
-import 'welcome_page.dart';
 import 'login_page.dart';
 
 class SignUpPage extends StatefulWidget {
