@@ -1,6 +1,7 @@
  // lib/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -99,25 +100,27 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Log in button (mock)
                   ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // TODO: authenticate, then navigate to Home if successful
-                        Navigator.pushReplacementNamed(context, '/home');
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3C5C5A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      'LOG IN',
-                      style: TextStyle(color: Colors.white, letterSpacing: 1),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
+  onPressed: () {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const HomePage(), // 👈 change to your homepage class name if needed
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF3C5C5A),
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30),
+    ),
+  ),
+  child: const Text(
+    'LOG IN',
+    style: TextStyle(color: Colors.white, letterSpacing: 1),
+  ),
+),
+
 
                   // Divider "or"
                   Row(
