@@ -102,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         // TODO: authenticate, then navigate to Home if successful
-                        Navigator.pop(context); // back to previous page
+                        Navigator.pushReplacementNamed(context, '/home');
                       }
                     },
                     style: ElevatedButton.styleFrom(
