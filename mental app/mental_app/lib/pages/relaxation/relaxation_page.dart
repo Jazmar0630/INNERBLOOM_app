@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
-import 'onboarding_intro_page.dart';
-import 'user_page.dart';
+import '../home/home_page.dart';
+import '../mood/onboarding_intro_page.dart';
+import '../user/user_page.dart';
 
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key});

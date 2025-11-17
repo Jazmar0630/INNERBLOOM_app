@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '_shared_background.dart';
+import '../widgets/_shared_background.dart';
 import 'mood_survey_page_one.dart';
-import 'mood_survey_data.dart';
+import '../model/mood_survey_data.dart';
 
 enum Mood { happy, okay, sad, angry, calm }
 

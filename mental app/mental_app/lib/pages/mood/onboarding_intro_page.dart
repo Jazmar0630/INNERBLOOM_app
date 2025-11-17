@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '_shared_background.dart';
+import '../widgets/_shared_background.dart';
 import 'mood_tracker_screen.dart';
 
 class OnboardingIntroPage extends StatelessWidget {

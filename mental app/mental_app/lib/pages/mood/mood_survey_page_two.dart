@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '_shared_background.dart';
-import 'mood_survey_data.dart';
+import '../widgets/_shared_background.dart';
+import '../model/mood_survey_data.dart';
 
 class MoodSurveyPageTwo extends StatefulWidget {
   final MoodSurveyData data;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'onboarding_intro_page.dart'; // <-- make sure this file exists
-import 'user_page.dart';  
-import 'relaxation_page.dart';
+import '../mood/onboarding_intro_page.dart'; // <-- make sure this file exists
+import '../user/user_page.dart';  
+import '../relaxation/relaxation_page.dart';
 
 
 class HomePage extends StatefulWidget {
