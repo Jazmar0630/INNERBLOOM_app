@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'onboarding_intro_page.dart';
 import 'user_page.dart';
@@ -233,7 +233,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
           BottomNavigationBarItem(
               icon: Icon(Icons.psychology_alt_outlined), label: 'Figure it out'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.spa_outlined), label: 'Relax'),
+              icon: Icon(Icons.self_improvement), label: 'Relax'),
           BottomNavigationBarItem(
               icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
