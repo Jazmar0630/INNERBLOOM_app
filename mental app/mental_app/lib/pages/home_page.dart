@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'onboarding_intro_page.dart'; // <-- make sure this file exists
 import 'user_page.dart';  
+import 'relaxation_page.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.displayName = 'User!'});
@@ -25,25 +27,42 @@ onTap: (i) {
   setState(() => _navIndex = i);
 
   if (i == 1) {
+    // Figure it out
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
     );
-  } 
-  else if (i == 3) { 
-    // PROFILE BUTTON → USER PAGE
+  } else if (i == 2) {
+    // Relaxation page
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const RelaxationPage()),
+    );
+  } else if (i == 3) {
+    // User profile
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const UserPage()),
     );
-  }
+  } 
 },
 
   showSelectedLabels: false,
   showUnselectedLabels: false,
   items: const [
-    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-    BottomNavigationBarItem(icon: Icon(Icons.psychology_alt_outlined), label: 'Figure it out'),
-    BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Relax'),
-    BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+      BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(  
+            icon: Icon(Icons.psychology_alt_outlined),
+            label: 'Mood',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.self_improvement),
+            label: 'Relaxation',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'User',
+          )
   ],
 ),
 
