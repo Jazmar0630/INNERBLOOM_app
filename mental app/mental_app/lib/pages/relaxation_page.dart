@@ -202,7 +202,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
                 SizedBox(
                   height: 140,
                   child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
+                    scrollDirection: Axis.vertical,
                     itemCount: _items.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (context, index) {
