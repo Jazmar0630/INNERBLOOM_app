@@ -37,6 +37,19 @@ class WelcomePage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
+                  // CIRCLE ICON (MOVED HERE)
+    Container(
+      width: 220,
+      height: 220,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
+    ),
+
+    const SizedBox(height: 32),
+
                   // Illustration
                   Image.asset(
                     'assets/meditation.png', // Replace with your own image asset
