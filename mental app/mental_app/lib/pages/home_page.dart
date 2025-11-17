@@ -42,7 +42,7 @@ onTap: (i) {
   items: const [
     BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
     BottomNavigationBarItem(icon: Icon(Icons.psychology_alt_outlined), label: 'Figure it out'),
-    BottomNavigationBarItem(icon: Icon(Icons.spa_outlined), label: 'Relax'),
+    BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Relax'),
     BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
   ],
 ),

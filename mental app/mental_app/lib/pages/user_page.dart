@@ -266,12 +266,12 @@ class _UserPageState extends State<UserPage> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.self_improvement),
+            icon: Icon(Icons.psychology_alt_outlined),
             label: 'Mood',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.show_chart),
-            label: 'Stats',
+            icon: Icon(Icons.self_improvement),
+            label: 'Relaxation',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
