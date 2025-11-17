@@ -1,7 +1,8 @@
  // user_page.dart
 import 'package:flutter/material.dart';
 import 'home_page.dart';
-import 'mood_tracker_screen.dart';
+import 'onboarding_intro_page.dart';
+import 'relaxation_page.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -14,31 +15,35 @@ class _UserPageState extends State<UserPage> {
   int _navIndex = 3; // we are on the User tab
 
   void _onNavTap(int index) {
-    if (index == _navIndex) return;
+   if (index == _navIndex) return;
 
-    setState(() => _navIndex = index);
+  setState(() => _navIndex = index);
 
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-        break;
-      case 1: // Mood tracking
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MoodTrackerScreen()),
-        );
-        break;
-      // case 2: // Stats / Insights (optional future page)
-      //   Navigator.pushReplacement(context,
-      //       MaterialPageRoute(builder: (_) => const StatsPage()));
-      //   break;
-      case 3: // User (current page)
-      default:
-        break;
-    }
+  switch (index) {
+    case 0: // Home
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+      break;
+
+    case 1: // Figure it out
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+      );
+      break;
+
+    case 2: // RELAX PAGE 🔥 ADD THIS
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const RelaxationPage()),
+      );
+      break;
+
+    case 3: // User (current page)
+      break;
+  }
   }
 
   @override
