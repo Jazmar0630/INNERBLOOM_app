@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding_intro_page.dart'; // <-- make sure this file exists
+import 'user_page.dart';  
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.displayName = 'User!'});
@@ -20,18 +21,22 @@ class _HomePageState extends State<HomePage> {
      bottomNavigationBar: BottomNavigationBar(
   type: BottomNavigationBarType.fixed,
   currentIndex: _navIndex,
-  onTap: (i) {
-    // keep the visual selection
-    setState(() => _navIndex = i);
+onTap: (i) {
+  setState(() => _navIndex = i);
 
-    // only the button BESIDE Home (index 1) navigates
-    if (i == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
-      );
-    }
-    // indices 0 (Home), 2 (Relax), 3 (Profile) do nothing
-  },
+  if (i == 1) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+    );
+  } 
+  else if (i == 3) { 
+    // PROFILE BUTTON → USER PAGE
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const UserPage()),
+    );
+  }
+},
+
   showSelectedLabels: false,
   showUnselectedLabels: false,
   items: const [

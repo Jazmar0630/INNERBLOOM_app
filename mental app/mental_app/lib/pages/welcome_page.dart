@@ -50,12 +50,7 @@ class WelcomePage extends StatelessWidget {
 
     const SizedBox(height: 32),
 
-                  // Illustration
-                  Image.asset(
-                    'assets/meditation.png', // Replace with your own image asset
-                    height: 180,
-                    fit: BoxFit.contain,
-                  ),
+                   
 
                   const SizedBox(height: 30),
 
