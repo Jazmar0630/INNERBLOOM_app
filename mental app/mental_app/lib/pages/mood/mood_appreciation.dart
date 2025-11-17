@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'signup_page.dart';
+ import 'package:flutter/material.dart';
+ 
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -56,7 +56,7 @@ class WelcomePage extends StatelessWidget {
 
                   // Description text
                   const Text(
-                    'Grow through what you go through.',
+                    'Thank You for checking in. You're taken a brave step today. A small progress is still a progress.We're so proud of you!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
@@ -64,15 +64,7 @@ class WelcomePage extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'A gentle space for your mental well-being.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                  ),
+                  
 
                   const Spacer(),
 
