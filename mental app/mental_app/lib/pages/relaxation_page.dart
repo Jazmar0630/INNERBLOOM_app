@@ -27,7 +27,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
     _RelaxItem(
       title: 'Ocean waves',
       subtitle: 'Gentle rolling ocean and wave sounds',
-      icon: Icons.waves, // if this errors, replace with Icons.waves
+      icon: Icons.waves,  
     ),
     _RelaxItem(
       title: 'Peaceful Piano & Rain',
@@ -242,7 +242,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
             label: 'User',
           ),
         ],
-      ),
+      ),  
     );
   }
 }
