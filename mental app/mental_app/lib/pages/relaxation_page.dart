@@ -218,24 +218,29 @@ class _RelaxationPageState extends State<RelaxationPage> {
       ),
 
       // bottom nav
-      bottomNavigationBar: BottomNavigationBar(
+       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
         onTap: _onNavTap,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white60,
-        backgroundColor: const Color(0xFF3C5C5A),
+        selectedItemColor: const Color(0xFF25424F),
+        unselectedItemColor: Colors.grey[500],
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined), label: 'Home'),
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.psychology_alt_outlined), label: 'Figure it out'),
+            icon: Icon(Icons.psychology_alt_outlined),
+            label: 'Mood',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.self_improvement), label: 'Relax'),
+            icon: Icon(Icons.self_improvement),
+            label: 'Relaxation',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline), label: 'Profile'),
+            icon: Icon(Icons.person_outline),
+            label: 'User',
+          ),
         ],
       ),
     );

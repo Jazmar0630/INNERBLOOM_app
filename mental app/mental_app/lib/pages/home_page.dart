@@ -44,8 +44,8 @@ onTap: (i) {
   } 
 },
 
-  showSelectedLabels: false,
-  showUnselectedLabels: false,
+   selectedItemColor: const Color(0xFF25424F),
+        unselectedItemColor: Colors.grey[500],
   items: const [
       BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
