@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/_shared_background.dart';
 import '../model/mood_survey_data.dart';
+import '../mood/mood_result.dart';
 
 class MoodSurveyPageTwo extends StatefulWidget {
   final MoodSurveyData data;
@@ -107,13 +108,17 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.popUntil(context, (route) => route.isFirst);
-                              },
-                              child: const Text('Finish'),
-                            ),
-                          ),
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+         context,
+  MaterialPageRoute(builder: (_) => MoodResultPage()),
+      );
+    },
+    child: const Text('Finish'),
+  ),
+),
+
                         ],
                       ),
                     ],

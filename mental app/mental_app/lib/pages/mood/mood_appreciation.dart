@@ -1,8 +1,11 @@
  import 'package:flutter/material.dart';
+ import '../home/home_page.dart';
+
+
  
 
-class WelcomePage extends StatelessWidget {
-  const WelcomePage({super.key});
+class MoodAppreciationPage extends StatelessWidget {
+  const MoodAppreciationPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,16 +27,7 @@ class WelcomePage extends StatelessWidget {
                 children: [
                   const Spacer(),
 
-                  // App title
-                  const Text(
-                    'Welcome to InnerBloom',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                   
 
                   const SizedBox(height: 20),
 
@@ -56,7 +50,7 @@ class WelcomePage extends StatelessWidget {
 
                   // Description text
                   const Text(
-                    'Thank You for checking in. You're taken a brave step today. A small progress is still a progress.We're so proud of you!',
+                    "Thank You for checking in. You're taken a brave step today. A small progress is still a progress.We're so proud of you!",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 18,
@@ -68,12 +62,12 @@ class WelcomePage extends StatelessWidget {
 
                   const Spacer(),
 
-                  // Get Started Button
+                  // Back to home  Button
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const SignUpPage()),
+                        MaterialPageRoute(builder: (_) => const HomePage()),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -85,7 +79,7 @@ class WelcomePage extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'GET STARTED',
+                      'Back to home',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,

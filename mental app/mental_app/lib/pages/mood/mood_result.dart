@@ -1,33 +1,14 @@
- import 'package:flutter/material.dart';
-import '../home/home_page.dart';
-import '../mood/onboarding_intro_page.dart';
-import '../user/user_page.dart';
+import 'package:flutter/material.dart';
+import '../mood/mood_appreciation.dart';
 
-class RelaxationPage extends StatefulWidget {
-  const RelaxationPage({super.key});
-
-  @override
-  State<RelaxationPage> createState() => _RelaxationPageState();
-}
-
-class _RelaxationPageState extends State<RelaxationPage> {
-  int _navIndex = 2; // we are on Relax tab
-  int _selectedCategory = 0;
-
-  final List<String> _categories = const [
-    'All',
-    'Anxiety reliefs',
-    'Overthinking detox',
-    'Motivation & energy',
-    'Stress & burnout',
-    'Self-love & confidence',
-  ];
+class MoodResultPage extends StatelessWidget {
+  const MoodResultPage({super.key});
 
   final List<_RelaxItem> _items = const [
     _RelaxItem(
       title: 'Ocean waves',
       subtitle: 'Gentle rolling ocean and wave sounds',
-      icon: Icons.waves,  
+      icon: Icons.waves,
     ),
     _RelaxItem(
       title: 'Peaceful Piano & Rain',
@@ -50,35 +31,6 @@ class _RelaxationPageState extends State<RelaxationPage> {
       icon: Icons.menu_book,
     ),
   ];
-
-  void _onNavTap(int index) {
-    if (index == _navIndex) return;
-    setState(() => _navIndex = index);
-
-    switch (index) {
-      case 0: // Home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-        break;
-      case 1: // Figure it out / onboarding
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
-        );
-        break;
-      case 2:
-        // already here
-        break;
-      case 3: // User
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const UserPage()),
-        );
-        break;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +86,8 @@ class _RelaxationPageState extends State<RelaxationPage> {
                 const SizedBox(height: 18),
 
                 const Text(
-                  'Categories',
+                  "It looks like you've been through a lot lately. "
+                  "Here's something that can help you feel better and boost back your confidence:",
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -142,65 +95,9 @@ class _RelaxationPageState extends State<RelaxationPage> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
-
-                // horizontal category chips
+                // vertical scrolling cards
                 SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final bool isSelected = index == _selectedCategory;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory = index;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.16),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            _categories[index],
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.w400,
-                              color: isSelected
-                                  ? const Color(0xFF3C5C5A)
-                                  : Colors.white,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 22),
-
-                const Text(
-                  'Listen or Watch:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // vertrical scrolling cards
-                SizedBox(
-                  height: 200,
+                  height: 400,
                   child: ListView.separated(
                     scrollDirection: Axis.vertical,
                     itemCount: _items.length,
@@ -217,32 +114,17 @@ class _RelaxationPageState extends State<RelaxationPage> {
         ),
       ),
 
-      // bottom nav
-       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _navIndex,
-        onTap: _onNavTap,
-        selectedItemColor: const Color(0xFF25424F),
-        unselectedItemColor: Colors.grey[500],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.psychology_alt_outlined),
-            label: 'Mood',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.self_improvement),
-            label: 'Relaxation',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'User',
-          ),
-        ],
-      ),  
+      // bottom right button → Mood Appreciation Page
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF3C5C5A),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MoodAppreciationPage()),
+          );
+        },
+        child: const Icon(Icons.favorite, color: Colors.white),
+      ),
     );
   }
 }
@@ -286,7 +168,6 @@ class _RelaxCard extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -307,7 +188,6 @@ class _RelaxCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: Colors.black54,
-                    height: 1.2,
                   ),
                 ),
               ],
@@ -317,8 +197,8 @@ class _RelaxCard extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3C5C5A),
+            decoration: const BoxDecoration(
+              color: Color(0xFF3C5C5A),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.play_arrow,
