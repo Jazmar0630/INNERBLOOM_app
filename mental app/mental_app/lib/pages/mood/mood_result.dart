@@ -1,8 +1,16 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../mood/mood_appreciation.dart';
 
-class MoodResultPage extends StatelessWidget {
+class MoodResultPage extends StatefulWidget {
   const MoodResultPage({super.key});
+
+  @override
+  State<MoodResultPage> createState() => _MoodResultPageState();
+}
+
+class _MoodResultPageState extends State<MoodResultPage> {
+  late YoutubePlayerController _ytController;
 
   final List<_RelaxItem> _items = const [
     _RelaxItem(
@@ -31,6 +39,28 @@ class MoodResultPage extends StatelessWidget {
       icon: Icons.menu_book,
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 👉 replace this URL with any YouTube link you like
+    const url = 'https://www.youtube.com/watch?v=2OEL4P1Rz04';
+
+    _ytController = YoutubePlayerController(
+      initialVideoId: YoutubePlayer.convertUrlToId(url)!,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ytController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,13 +125,29 @@ class MoodResultPage extends StatelessWidget {
                   ),
                 ),
 
-                // vertical scrolling cards
-                SizedBox(
-                  height: 400,
+                const SizedBox(height: 16),
+
+                // 🧘 Embedded YouTube relaxation video
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: YoutubePlayer(
+                      controller: _ytController,
+                      showVideoProgressIndicator: true,
+                      progressIndicatorColor: Colors.white,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // relaxation list
+                Expanded(
                   child: ListView.separated(
                     scrollDirection: Axis.vertical,
                     itemCount: _items.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = _items[index];
                       return _RelaxCard(item: item);
@@ -201,8 +247,11 @@ class _RelaxCard extends StatelessWidget {
               color: Color(0xFF3C5C5A),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.play_arrow,
-                size: 20, color: Colors.white),
+            child: const Icon(
+              Icons.play_arrow,
+              size: 20,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
