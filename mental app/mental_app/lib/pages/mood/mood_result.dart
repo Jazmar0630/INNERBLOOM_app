@@ -1,6 +1,7 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../mood/mood_appreciation.dart';
+import '../relaxation/video_player_page.dart';
 
 class MoodResultPage extends StatefulWidget {
   const MoodResultPage({super.key});
@@ -125,20 +126,47 @@ class _MoodResultPageState extends State<MoodResultPage> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+// ⭐ YOUTUBE THUMBNAIL HERE ⭐
+GestureDetector(
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const VideoPlayerPage()),
+    );
+  },
+  child: Stack(
+    alignment: Alignment.center,
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          "https://img.youtube.com/vi/2OEL4P1Rz04/maxresdefault.jpg",
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+      ),
+      const Icon(Icons.play_circle_fill,
+          size: 70, color: Colors.white),
+    ],
+  ),
+),
 
+
+                const SizedBox(height: 16),
                 // 🧘 Embedded YouTube relaxation video
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: YoutubePlayer(
-                      controller: _ytController,
-                      showVideoProgressIndicator: true,
-                      progressIndicatorColor: Colors.white,
-                    ),
-                  ),
-                ),
+                SizedBox(
+  height: 220, // try 180–240 until you like it
+  width: double.infinity,
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(14),
+    child: YoutubePlayer(
+      controller: _ytController,
+      showVideoProgressIndicator: true,
+      progressIndicatorColor: Colors.white,
+    ),
+  ),
+),
 
                 const SizedBox(height: 16),
 
