@@ -46,7 +46,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
     super.initState();
 
     // 👉 replace this URL with any YouTube link you like
-    const url = 'https://www.youtube.com/watch?v=2OEL4P1Rz04';
+    const url = 'https://www.youtube.com/shorts/c_c2NmiDr-I?feature=share';
 
     _ytController = YoutubePlayerController(
       initialVideoId: YoutubePlayer.convertUrlToId(url)!,
