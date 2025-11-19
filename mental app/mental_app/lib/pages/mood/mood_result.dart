@@ -140,7 +140,7 @@ GestureDetector(
       ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.network(
-          "https://img.youtube.com/vi/2OEL4P1Rz04/maxresdefault.jpg",
+          "https://www.youtube.com/shorts/LMLVoeErvWo?feature=share",
           height: 200,
           width: double.infinity,
           fit: BoxFit.cover,
@@ -156,7 +156,7 @@ GestureDetector(
                 const SizedBox(height: 16),
                 // 🧘 Embedded YouTube relaxation video
                 SizedBox(
-  height: 220, // try 180–240 until you like it
+  height: 200, // try 180–240 until you like it
   width: double.infinity,
   child: ClipRRect(
     borderRadius: BorderRadius.circular(14),
