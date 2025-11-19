@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import '../mood/onboarding_intro_page.dart'; // <-- make sure this file exists
-import '../user/user_page.dart';  
+ import 'package:flutter/material.dart';
+import '../mood/onboarding_intro_page.dart';
+import '../user/user_page.dart';
 import '../relaxation/relaxation_page.dart';
-
+import 'dart:io'; // for exit(0)
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.displayName = 'User!'});
@@ -19,39 +19,38 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      // Bottom navigation bar (4 items)
-     bottomNavigationBar: BottomNavigationBar(
-  type: BottomNavigationBarType.fixed,
-  currentIndex: _navIndex,
-onTap: (i) {
-  setState(() => _navIndex = i);
 
-  if (i == 1) {
-    // Figure it out
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
-    );
-  } else if (i == 2) {
-    // Relaxation page
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RelaxationPage()),
-    );
-  } else if (i == 3) {
-    // User profile
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const UserPage()),
-    );
-  } 
-},
+      // ⭐ ADD DRAWER HERE
+      drawer: _buildAppDrawer(context),
 
-   selectedItemColor: const Color(0xFF25424F),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _navIndex,
+        onTap: (i) {
+          setState(() => _navIndex = i);
+
+          if (i == 1) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+            );
+          } else if (i == 2) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RelaxationPage()),
+            );
+          } else if (i == 3) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const UserPage()),
+            );
+          }
+        },
+        selectedItemColor: const Color(0xFF25424F),
         unselectedItemColor: Colors.grey[500],
-  items: const [
-      BottomNavigationBarItem(
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: 'Home',
           ),
-          BottomNavigationBarItem(  
+          BottomNavigationBarItem(
             icon: Icon(Icons.psychology_alt_outlined),
             label: 'Mood',
           ),
@@ -63,35 +62,35 @@ onTap: (i) {
             icon: Icon(Icons.person_outline),
             label: 'User',
           )
-  ],
-),
-
+        ],
+      ),
 
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)], // teal→grey vibe
+            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
           ),
         ),
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
-              // Top bar (menu + avatar)
+              // Top bar with menu + avatar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.menu, color: Colors.white),
+                  Builder(
+                    builder: (context) => IconButton(
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                    ),
                   ),
                   const CircleAvatar(
                     radius: 18,
-                    backgroundImage: AssetImage('assets/avatar_placeholder.png'),
-                    // If you don't have an asset, replace with backgroundColor:
-                    // backgroundColor: Colors.white24,
+                    backgroundImage:
+                        AssetImage('assets/avatar_placeholder.png'),
                   ),
                 ],
               ),
@@ -119,14 +118,16 @@ onTap: (i) {
 
               const SizedBox(height: 16),
 
-              // Mood quick picks (icons + labels)
+              // Mood chips
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
                   _MoodChip(icon: Icons.mood_bad_outlined, label: 'Anxious'),
                   _MoodChip(icon: Icons.work_outline, label: 'Distracted'),
                   _MoodChip(icon: Icons.self_improvement, label: 'Relax'),
-                  _MoodChip(icon: Icons.sentiment_very_dissatisfied, label: 'Depressed'),
+                  _MoodChip(
+                      icon: Icons.sentiment_very_dissatisfied,
+                      label: 'Depressed'),
                 ],
               ),
 
@@ -138,22 +139,24 @@ onTap: (i) {
               ),
               const SizedBox(height: 10),
 
-              // CTA → OnboardingIntroPage
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.arrow_forward),
                   label: const Text("Let's figure it out"),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     backgroundColor: Colors.white24,
                     foregroundColor: Colors.white,
                     elevation: 0,
                   ),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+                      MaterialPageRoute(
+                          builder: (_) => const OnboardingIntroPage()),
                     );
                   },
                 ),
@@ -161,7 +164,6 @@ onTap: (i) {
 
               const SizedBox(height: 20),
 
-              // Recommendation cards
               _RecoCard(
                 title: 'Bring your focus back',
                 subtitle:
@@ -185,7 +187,60 @@ onTap: (i) {
   }
 }
 
-// --------- Small UI helpers ---------
+// ---------------------------------------------------------
+// ⭐ DRAWER WIDGET
+// ---------------------------------------------------------
+Widget _buildAppDrawer(BuildContext context) {
+  return Drawer(
+    child: ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const DrawerHeader(
+          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+          child: Text(
+            'InnerBloom',
+            style: TextStyle(
+              fontSize: 22,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Settings'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Help & Support'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Privacy Policy'),
+          onTap: () {},
+        ),
+
+        const Divider(),
+
+        ListTile(
+          leading: const Icon(Icons.exit_to_app, color: Colors.red),
+          title: const Text(
+            'Exit App',
+            style: TextStyle(color: Colors.red),
+          ),
+          onTap: () {
+            exit(0);
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------
 
 class _MoodChip extends StatelessWidget {
   const _MoodChip({required this.icon, required this.label});
@@ -207,7 +262,8 @@ class _MoodChip extends StatelessWidget {
           child: Icon(icon, color: Colors.white, size: 28),
         ),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(label,
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ],
     );
   }
@@ -236,7 +292,6 @@ class _RecoCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          // Illustration placeholder
           Container(
             width: 56,
             height: 56,
@@ -247,7 +302,6 @@ class _RecoCard extends StatelessWidget {
             child: Icon(illustration, size: 30),
           ),
           const SizedBox(width: 14),
-          // Texts + button
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
