@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
-
-
+import 'dart:io'; // for exit(0)
 
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key});
@@ -29,7 +28,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
     _RelaxItem(
       title: 'Ocean waves',
       subtitle: 'Gentle rolling ocean and wave sounds',
-      icon: Icons.waves,  
+      icon: Icons.waves,
     ),
     _RelaxItem(
       title: 'Peaceful Piano & Rain',
@@ -85,6 +84,11 @@ class _RelaxationPageState extends State<RelaxationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
+
+      // ✅ ADD DRAWER HERE
+      drawer: _buildAppDrawer(context),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -103,10 +107,14 @@ class _RelaxationPageState extends State<RelaxationPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white),
-                      onPressed: () {},
+                    // ✅ DRAWER ICON THAT OPENS MENU
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
                     ),
+
                     const CircleAvatar(
                       radius: 18,
                       backgroundColor: Colors.white24,
@@ -188,7 +196,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
                 ),
 
                 const SizedBox(height: 22),
-                 
+
                 const Text(
                   'Listen or Watch:',
                   style: TextStyle(
@@ -200,13 +208,12 @@ class _RelaxationPageState extends State<RelaxationPage> {
 
                 const SizedBox(height: 12),
 
-                // vertrical scrolling cards
-                SizedBox(
-                  height: 200,
+                // vertical scrolling cards
+                Expanded(
                   child: ListView.separated(
                     scrollDirection: Axis.vertical,
                     itemCount: _items.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = _items[index];
                       return _RelaxCard(item: item);
@@ -220,7 +227,7 @@ class _RelaxationPageState extends State<RelaxationPage> {
       ),
 
       // bottom nav
-       bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
         onTap: _onNavTap,
@@ -244,10 +251,63 @@ class _RelaxationPageState extends State<RelaxationPage> {
             label: 'User',
           ),
         ],
-      ),  
+      ),
     );
   }
 }
+
+// ---------------------------------------------------------
+// ✅ DRAWER WIDGET (same as HomePage drawer)
+// ---------------------------------------------------------
+Widget _buildAppDrawer(BuildContext context) {
+  return Drawer(
+    child: ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const DrawerHeader(
+          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+          child: Text(
+            'InnerBloom',
+            style: TextStyle(
+              fontSize: 22,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Settings'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Help & Support'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Privacy Policy'),
+          onTap: () {},
+        ),
+
+        const Divider(),
+
+        ListTile(
+          leading: const Icon(Icons.exit_to_app, color: Colors.red),
+          title: const Text(
+            'Exit App',
+            style: TextStyle(color: Colors.red),
+          ),
+          onTap: () => exit(0),
+        ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------
 
 class _RelaxItem {
   final String title;
@@ -268,7 +328,7 @@ class _RelaxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 240,
+      width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -319,8 +379,8 @@ class _RelaxCard extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3C5C5A),
+            decoration: const BoxDecoration(
+              color: Color(0xFF3C5C5A),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.play_arrow,
