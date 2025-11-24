@@ -76,7 +76,7 @@ class _HomePageState extends State<HomePage> {
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            children: [
+            children: [ 
               // Top bar with menu + avatar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -223,7 +223,7 @@ Widget _buildAppDrawer(BuildContext context) {
           onTap: () {},
         ),
 
-        const Divider(),
+        const Divider(),      
 
         ListTile(
           leading: const Icon(Icons.exit_to_app, color: Colors.red),
@@ -239,7 +239,7 @@ Widget _buildAppDrawer(BuildContext context) {
     ),
   );
 }
-
+      
 // ---------------------------------------------------------
 
 class _MoodChip extends StatelessWidget {
@@ -338,3 +338,4 @@ class _RecoCard extends StatelessWidget {
     );
   }
 }
+      
