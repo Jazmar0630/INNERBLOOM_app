@@ -1,16 +1,9 @@
-<<<<<<< HEAD
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
-=======
-import 'package:flutter/material.dart';
-import '../home/home_page.dart';
-import '../mood/onboarding_intro_page.dart';
-import '../user/user_page.dart';
 import 'dart:io'; // for exit(0)
->>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
 
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key});
@@ -162,10 +155,7 @@ class _RelaxationPageState extends State<RelaxationPage>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-
-      // ✅ ADD DRAWER HERE
       drawer: _buildAppDrawer(context),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -183,13 +173,14 @@ class _RelaxationPageState extends State<RelaxationPage>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-<<<<<<< HEAD
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.menu, color: Colors.white),
-                          onPressed: () {},
+                        Builder(
+                          builder: (context) => IconButton(
+                            icon: const Icon(Icons.menu, color: Colors.white),
+                            onPressed: () => Scaffold.of(context).openDrawer(),
+                          ),
                         ),
                         const CircleAvatar(
                           radius: 18,
@@ -198,7 +189,6 @@ class _RelaxationPageState extends State<RelaxationPage>
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
 
                     // Search
@@ -238,7 +228,14 @@ class _RelaxationPageState extends State<RelaxationPage>
                                 color: isSelected ? Colors.white : Colors.white.withOpacity(0.16),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text(_categories[idx], style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: isSelected ? const Color(0xFF3C5C5A) : Colors.white)),
+                              child: Text(
+                                _categories[idx],
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                  color: isSelected ? const Color(0xFF3C5C5A) : Colors.white
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -257,23 +254,12 @@ class _RelaxationPageState extends State<RelaxationPage>
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final item = _items[index];
-                          return _RelaxCard(item: item, onPlay: () => _showOverlayForIndex(index % _videoIds.length));
+                          return _RelaxCard(
+                            item: item,
+                            onPlay: () => _showOverlayForIndex(index % _videoIds.length)
+                          );
                         },
                       ),
-=======
-                    // ✅ DRAWER ICON THAT OPENS MENU
-                    Builder(
-                      builder: (context) => IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
-                        onPressed: () => Scaffold.of(context).openDrawer(),
-                      ),
-                    ),
-
-                    const CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.person, color: Colors.white),
->>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
                     ),
                   ],
                 ),
@@ -288,95 +274,87 @@ class _RelaxationPageState extends State<RelaxationPage>
                   ),
 
                 // overlay sheet
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SlideTransition(
-                    position: _overlayOffset,
-                    child: SafeArea(
-                      top: false,
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.75,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
-                        ),
-<<<<<<< HEAD
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: Row(
-                                children: [
-                                  Expanded(child: Text(_items[_overlayCurrentIndex].title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
-                                  IconButton(onPressed: _hideOverlay, icon: const Icon(Icons.close)),
-                                ],
+                if (_isOverlayVisible)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: SlideTransition(
+                      position: _overlayOffset,
+                      child: SafeArea(
+                        top: false,
+                        child: Container(
+                          height: MediaQuery.of(context).size.height * 0.75,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+                          ),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _items[_overlayCurrentIndex].title,
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)
+                                      )
+                                    ),
+                                    IconButton(
+                                      onPressed: _hideOverlay,
+                                      icon: const Icon(Icons.close)
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: _overlayYoutubeController != null
-                                  ? YoutubePlayer(controller: _overlayYoutubeController!, showVideoProgressIndicator: true)
-                                  : const Center(child: CircularProgressIndicator()),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  IconButton(iconSize: 32, icon: const Icon(Icons.replay_10), onPressed: () => _seekOverlayRelative(const Duration(seconds: -10))),
-                                  IconButton(iconSize: 48, icon: Icon(_overlayYoutubeController?.value.isPlaying == true ? Icons.pause_circle_filled : Icons.play_circle_fill), onPressed: _toggleOverlayPlayPause),
-                                  IconButton(iconSize: 32, icon: const Icon(Icons.forward_10), onPressed: () => _seekOverlayRelative(const Duration(seconds: 10))),
-                                ],
+                              Expanded(
+                                child: _overlayYoutubeController != null
+                                    ? YoutubePlayer(
+                                        controller: _overlayYoutubeController!,
+                                        showVideoProgressIndicator: true
+                                      )
+                                    : const Center(child: CircularProgressIndicator()),
                               ),
-                            ),
-                          ],
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      iconSize: 32,
+                                      icon: const Icon(Icons.replay_10),
+                                      onPressed: () => _seekOverlayRelative(const Duration(seconds: -10))
+                                    ),
+                                    IconButton(
+                                      iconSize: 48,
+                                      icon: Icon(
+                                        _overlayYoutubeController?.value.isPlaying == true
+                                            ? Icons.pause_circle_filled
+                                            : Icons.play_circle_fill
+                                      ),
+                                      onPressed: _toggleOverlayPlayPause
+                                    ),
+                                    IconButton(
+                                      iconSize: 32,
+                                      icon: const Icon(Icons.forward_10),
+                                      onPressed: () => _seekOverlayRelative(const Duration(seconds: 10))
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-=======
-                      );
-                    },
                   ),
-                ),
-
-                const SizedBox(height: 22),
-
-                const Text(
-                  'Listen or Watch:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // vertical scrolling cards
-                Expanded(
-                  child: ListView.separated(
-                    scrollDirection: Axis.vertical,
-                    itemCount: _items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = _items[index];
-                      return _RelaxCard(item: item);
-                    },
->>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
-                  ),
-                ),
               ],
             ),
           ),
         ),
       ),
-<<<<<<< HEAD
-=======
-
-      // bottom nav
->>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -394,9 +372,7 @@ class _RelaxationPageState extends State<RelaxationPage>
   }
 }
 
-// ---------------------------------------------------------
-// ✅ DRAWER WIDGET (same as HomePage drawer)
-// ---------------------------------------------------------
+// Drawer Widget
 Widget _buildAppDrawer(BuildContext context) {
   return Drawer(
     child: ListView(
@@ -413,7 +389,6 @@ Widget _buildAppDrawer(BuildContext context) {
             ),
           ),
         ),
-
         ListTile(
           leading: const Icon(Icons.settings),
           title: const Text('Settings'),
@@ -429,9 +404,7 @@ Widget _buildAppDrawer(BuildContext context) {
           title: const Text('Privacy Policy'),
           onTap: () {},
         ),
-
         const Divider(),
-
         ListTile(
           leading: const Icon(Icons.exit_to_app, color: Colors.red),
           title: const Text(
@@ -444,8 +417,6 @@ Widget _buildAppDrawer(BuildContext context) {
     ),
   );
 }
-
-// ---------------------------------------------------------
 
 class _RelaxItem {
   final String title;
@@ -465,44 +436,64 @@ class _RelaxCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-<<<<<<< HEAD
-      margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
-=======
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18)
       ),
->>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
       child: Row(
         children: [
-          Container(width: 50, height: 50, decoration: BoxDecoration(color: const Color(0xFF3C5C5A).withOpacity(0.1), shape: BoxShape.circle), child: Icon(item.icon, color: const Color(0xFF3C5C5A))),
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3C5C5A).withOpacity(0.1),
+              shape: BoxShape.circle
+            ),
+            child: Icon(item.icon, color: const Color(0xFF3C5C5A)),
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.black87)),
-              const SizedBox(height: 4),
-              Text(item.subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.black54, height: 1.2)),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Colors.black87
+                  )
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black54,
+                    height: 1.2
+                  )
+                ),
+              ]
+            ),
           ),
           const SizedBox(width: 6),
-<<<<<<< HEAD
           GestureDetector(
             onTap: onPlay,
-            child: Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFF3C5C5A), shape: BoxShape.circle), child: const Icon(Icons.play_arrow, size: 22, color: Colors.white)),
-=======
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(
-              color: Color(0xFF3C5C5A),
-              shape: BoxShape.circle,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Color(0xFF3C5C5A),
+                shape: BoxShape.circle
+              ),
+              child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
             ),
-            child: const Icon(Icons.play_arrow,
-                size: 20, color: Colors.white),
->>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
           ),
         ],
       ),
