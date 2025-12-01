@@ -15,7 +15,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
 
-    const videoUrl = "https://www.youtube.com/shorts/c_c2NmiDr-I?feature=share";
+    const videoUrl = "https://www.youtube.com/shorts/c_c2NmiDr-I?feature=share  ";
 
     _controller = YoutubePlayerController(
       initialVideoId: YoutubePlayer.convertUrlToId(videoUrl)!,

@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
+=======
+ import 'package:flutter/material.dart';
+import '../home/home_page.dart';
+import '../mood/onboarding_intro_page.dart';
+import '../user/user_page.dart';
+import 'dart:io'; // for exit(0)
+>>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
 
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key});
@@ -153,6 +161,11 @@ class _RelaxationPageState extends State<RelaxationPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
+
+      // ✅ ADD DRAWER HERE
+      drawer: _buildAppDrawer(context),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -170,6 +183,7 @@ class _RelaxationPageState extends State<RelaxationPage>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+<<<<<<< HEAD
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -246,6 +260,20 @@ class _RelaxationPageState extends State<RelaxationPage>
                           return _RelaxCard(item: item, onPlay: () => _showOverlayForIndex(index % _videoIds.length));
                         },
                       ),
+=======
+                    // ✅ DRAWER ICON THAT OPENS MENU
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.white),
+>>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
                     ),
                   ],
                 ),
@@ -275,6 +303,7 @@ class _RelaxationPageState extends State<RelaxationPage>
                           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                           boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
                         ),
+<<<<<<< HEAD
                         child: Column(
                           children: [
                             Padding(
@@ -306,6 +335,36 @@ class _RelaxationPageState extends State<RelaxationPage>
                         ),
                       ),
                     ),
+=======
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                const Text(
+                  'Listen or Watch:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // vertical scrolling cards
+                Expanded(
+                  child: ListView.separated(
+                    scrollDirection: Axis.vertical,
+                    itemCount: _items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = _items[index];
+                      return _RelaxCard(item: item);
+                    },
+>>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
                   ),
                 ),
               ],
@@ -313,6 +372,11 @@ class _RelaxationPageState extends State<RelaxationPage>
           ),
         ),
       ),
+<<<<<<< HEAD
+=======
+
+      // bottom nav
+>>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -329,6 +393,59 @@ class _RelaxationPageState extends State<RelaxationPage>
     );
   }
 }
+
+// ---------------------------------------------------------
+// ✅ DRAWER WIDGET (same as HomePage drawer)
+// ---------------------------------------------------------
+Widget _buildAppDrawer(BuildContext context) {
+  return Drawer(
+    child: ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const DrawerHeader(
+          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+          child: Text(
+            'InnerBloom',
+            style: TextStyle(
+              fontSize: 22,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Settings'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Help & Support'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Privacy Policy'),
+          onTap: () {},
+        ),
+
+        const Divider(),
+
+        ListTile(
+          leading: const Icon(Icons.exit_to_app, color: Colors.red),
+          title: const Text(
+            'Exit App',
+            style: TextStyle(color: Colors.red),
+          ),
+          onTap: () => exit(0),
+        ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------
 
 class _RelaxItem {
   final String title;
@@ -348,9 +465,17 @@ class _RelaxCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+<<<<<<< HEAD
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+=======
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+>>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
       child: Row(
         children: [
           Container(width: 50, height: 50, decoration: BoxDecoration(color: const Color(0xFF3C5C5A).withOpacity(0.1), shape: BoxShape.circle), child: Icon(item.icon, color: const Color(0xFF3C5C5A))),
@@ -363,9 +488,21 @@ class _RelaxCard extends StatelessWidget {
             ]),
           ),
           const SizedBox(width: 6),
+<<<<<<< HEAD
           GestureDetector(
             onTap: onPlay,
             child: Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFF3C5C5A), shape: BoxShape.circle), child: const Icon(Icons.play_arrow, size: 22, color: Colors.white)),
+=======
+          Container(
+            width: 32,
+            height: 32,
+            decoration: const BoxDecoration(
+              color: Color(0xFF3C5C5A),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.play_arrow,
+                size: 20, color: Colors.white),
+>>>>>>> 8ffcd72b6cd345cd7401c9d5343045cf54dfd65a
           ),
         ],
       ),

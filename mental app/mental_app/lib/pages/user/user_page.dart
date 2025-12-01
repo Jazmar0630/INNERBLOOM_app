@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
+import 'dart:io'; // for exit(0)
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -15,40 +16,45 @@ class _UserPageState extends State<UserPage> {
   int _navIndex = 3; // we are on the User tab
 
   void _onNavTap(int index) {
-   if (index == _navIndex) return;
+    if (index == _navIndex) return;
 
-  setState(() => _navIndex = index);
+    setState(() => _navIndex = index);
 
-  switch (index) {
-    case 0: // Home
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-      break;
+    switch (index) {
+      case 0: // Home
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+        break;
 
-    case 1: // Figure it out
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
-      );
-      break;
+      case 1: // Mood / onboarding
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+        );
+        break;
 
-    case 2: // RELAX PAGE 🔥 ADD THIS
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RelaxationPage()),
-      );
-      break;
+      case 2: // Relaxation
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const RelaxationPage()),
+        );
+        break;
 
-    case 3: // User (current page)
-      break;
-  }
+      case 3: // User (current)
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
+
+      // ✅ ADD DRAWER HERE
+      drawer: _buildAppDrawer(context),
+
       // gradient background
       body: Container(
         decoration: const BoxDecoration(
@@ -67,15 +73,16 @@ class _UserPageState extends State<UserPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top bar with menu icon
+                // Top bar with drawer icon
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white),
-                      onPressed: () {
-                        // TODO: open drawer / settings if you want
-                      },
+                    // ✅ DRAWER ICON THAT OPENS MENU
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
                     ),
                   ],
                 ),
@@ -113,8 +120,8 @@ class _UserPageState extends State<UserPage> {
                 // DAILY CHECK-IN CARD
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
@@ -163,8 +170,8 @@ class _UserPageState extends State<UserPage> {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
@@ -213,7 +220,7 @@ class _UserPageState extends State<UserPage> {
 
                         const SizedBox(height: 16),
 
-                        // Y-axis labels
+                        // Y-axis labels + chart placeholder
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -229,7 +236,6 @@ class _UserPageState extends State<UserPage> {
                             ),
                             const SizedBox(width: 12),
 
-                            // chart placeholder
                             Expanded(
                               child: Container(
                                 height: 170,
@@ -287,6 +293,59 @@ class _UserPageState extends State<UserPage> {
     );
   }
 }
+
+// ---------------------------------------------------------
+// ✅ DRAWER WIDGET (same as HomePage drawer)
+// ---------------------------------------------------------
+Widget _buildAppDrawer(BuildContext context) {
+  return Drawer(
+    child: ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const DrawerHeader(
+          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+          child: Text(
+            'InnerBloom',
+            style: TextStyle(
+              fontSize: 22,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Settings'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Help & Support'),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Privacy Policy'),
+          onTap: () {},
+        ),
+
+        const Divider(),
+
+        ListTile(
+          leading: const Icon(Icons.exit_to_app, color: Colors.red),
+          title: const Text(
+            'Exit App',
+            style: TextStyle(color: Colors.red),
+          ),
+          onTap: () => exit(0),
+        ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------
 
 // Small helper widget for the day bubbles
 Widget _buildDayBubble(String label, {bool isCompleted = false}) {
