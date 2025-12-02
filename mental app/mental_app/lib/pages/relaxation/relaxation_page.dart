@@ -4,7 +4,7 @@ import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import 'dart:io'; // for exit(0)
-   
+
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key});
 
