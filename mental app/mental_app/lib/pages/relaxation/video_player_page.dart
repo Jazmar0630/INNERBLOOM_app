@@ -15,10 +15,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
 
-    const videoUrl = "https://www.youtube.com/shorts/c_c2NmiDr-I?feature=share";
+    // Your YouTube Shorts URL
+    const videoUrl =
+        "https://www.youtube.com/shorts/c_c2NmiDr-I?feature=share";
+
+    // Convert URL to video ID
     final videoId = YoutubePlayer.convertUrlToId(videoUrl);
-    
+
     if (videoId == null) {
+      // Handle invalid URL case
       debugPrint('Invalid YouTube URL: $videoUrl');
     }
 

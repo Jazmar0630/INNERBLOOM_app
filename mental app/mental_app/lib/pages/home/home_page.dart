@@ -35,7 +35,7 @@ class _HomePageState extends State<HomePage> {
             );
           } else if (i == 2) {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const VideoPlayerPage()),
+              MaterialPageRoute(builder: (_) => const RelaxationPage()),
             );
           } else if (i == 3) {
             Navigator.of(context).push(

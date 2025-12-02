@@ -38,7 +38,7 @@ class _UserPageState extends State<UserPage> {
       case 2: // Relaxation
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const VideoPlayerPage()),
+          MaterialPageRoute(builder: (_) => const RelaxationPage()),
         );
         break;
 
