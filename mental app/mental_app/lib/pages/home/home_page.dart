@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import '../relaxation/relaxation_page.dart';
@@ -35,7 +35,7 @@ class _HomePageState extends State<HomePage> {
             );
           } else if (i == 2) {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const RelaxationPage()),
+              MaterialPageRoute(builder: (_) => const VideoPlayerPage()),
             );
           } else if (i == 3) {
             Navigator.of(context).push(

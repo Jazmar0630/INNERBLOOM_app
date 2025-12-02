@@ -15,13 +15,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
 
-    // Removed trailing spaces from URL
     const videoUrl = "https://www.youtube.com/shorts/c_c2NmiDr-I?feature=share";
-
     final videoId = YoutubePlayer.convertUrlToId(videoUrl);
     
     if (videoId == null) {
-      // Handle invalid URL case
       debugPrint('Invalid YouTube URL: $videoUrl');
     }
 
