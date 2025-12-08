@@ -49,10 +49,10 @@ class _LoginPageState extends State<LoginPage> {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
+                          ),
+                          ),
+                        const SizedBox(height: 6),
+                      const Text(
                     'and track your progress daily',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70),
@@ -100,10 +100,10 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Log in button (mock)
                   ElevatedButton(
-  onPressed: () {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
+                 onPressed: () {
+                  Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
         builder: (_) => const HomePage(), // 👈 change to your homepage class name if needed
       ),
     );
@@ -157,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Text(
                           'Sign up',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Colors.lightBlueAccent,
                             decoration: TextDecoration.underline,
                           ),
                         ),

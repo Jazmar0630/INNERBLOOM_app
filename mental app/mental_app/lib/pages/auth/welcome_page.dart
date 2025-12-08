@@ -38,12 +38,12 @@ class WelcomePage extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // CIRCLE ICON (MOVED HERE)
-    Container(
-      width: 220,
-      height: 220,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        shape: BoxShape.circle,
+                  Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    shape: BoxShape.circle,
       ),
       child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
     ),
@@ -63,7 +63,7 @@ class WelcomePage extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
-                  ),
+                  ),  
                   const SizedBox(height: 10),
                   const Text(
                     'A gentle space for your mental well-being.',
