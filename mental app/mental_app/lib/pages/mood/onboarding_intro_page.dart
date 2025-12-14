@@ -12,7 +12,20 @@ class OnboardingIntroPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Back button at top
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 0, 0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+
             const Spacer(),
+
             // Icon circle
             Container(
               width: 220,
@@ -28,13 +41,17 @@ class OnboardingIntroPage extends StatelessWidget {
               'HELP US TO GET TO KNOW YOU',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.1),
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+              ),
             ),
             const SizedBox(height: 12),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                'We wouldn’t know you better than yourself. Help us get to know you by answering some simple questions.',
+                'We wouldn\'t know you better than yourself. Help us get to know you by answering some simple questions.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
               ),
