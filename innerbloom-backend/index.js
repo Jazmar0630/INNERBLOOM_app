@@ -1,4 +1,5 @@
- // index.js — InnerBloom backend (ES Modules)
+ // index.js — InnerBloom backend (Node + Express + Gemini)
+// Make sure package.json has: "type": "module"
 
 import express from "express";
 import cors from "cors";
@@ -7,12 +8,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 
-console.log(
-  process.env.GEMINI_API_KEY
-    ? "✅ GEMINI_API_KEY loaded"
-    : "❌ GEMINI_API_KEY is MISSING"
-);
-
+// Check that the API key is loaded (won't print the key itself)
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ GEMINI_API_KEY is missing from .env");
+} else {
+  console.log("✅ GEMINI_API_KEY loaded");
+}
 
 const app = express();
 app.use(cors());
@@ -22,21 +23,24 @@ app.use(express.json());
 // Gemini initialisation
 // --------------------
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// This model name should match what your key supports
+const GEMINI_MODEL_ID = "gemini-flash-latest";
 
-// In-memory storage for survey results (later you can replace with DB)
+// In-memory storage for survey results (later you can replace with a DB)
 const surveyData = new Map();
 
-// --------------------
-// Health check
-// --------------------
+// -------------------------------------------------
+// 1) GET /  → health check (Thunder: GET http://localhost:3000/)
+// -------------------------------------------------
 app.get("/", (req, res) => {
   res.send("InnerBloom Backend is running.");
 });
 
-// =====================================
-// 1) SIMPLE GEMINI ENDPOINT (MOOD ONLY)
-//    POST /generateRelaxation
-// =====================================
+// -------------------------------------------------
+// 2) POST /generateRelaxation
+//    Thunder: POST http://localhost:3000/generateRelaxation
+//    Body JSON: { "mood": "I feel stressed and overwhelmed" }
+// -------------------------------------------------
 app.post("/generateRelaxation", async (req, res) => {
   try {
     const { mood } = req.body;
@@ -45,41 +49,40 @@ app.post("/generateRelaxation", async (req, res) => {
       return res.status(400).json({ error: "mood is required in the body." });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_ID });
 
     const prompt = `
       The user says they are feeling: "${mood}".
-      You are a mental wellbeing assistant.
+      You are a gentle, supportive mental wellbeing assistant.
       Generate a short, calming relaxation exercise (60–120 words).
       Keep it simple, soothing, and suitable for teenagers.
-      Avoid medical or clinical advice. Focus on breathing, grounding,
-      gentle movement, or safe visualization.
+      Use safe techniques like breathing, grounding, visualization,
+      or gentle movement. Do NOT give medical or diagnostic advice.
     `;
 
     const result = await model.generateContent(prompt);
     const reply = result.response.text();
 
-    res.json({ relaxation: reply });
+    return res.json({ relaxation: reply });
   } catch (error) {
-    console.error("Error in /generateRelaxation:", error?.message||error);
-    res.status(500).json({ error: "Error generating relaxation exercise." });
+    console.error("❌ Error in /generateRelaxation:", error?.message || error);
+    return res
+      .status(500)
+      .json({ error: "Error generating relaxation exercise." });
   }
 });
 
-// =====================================
-// 2) SURVEY + RECOMMENDATION ENDPOINTS
-//    POST /api/survey
-//    GET  /api/recommendation/:userId
-// =====================================
-
-// POST /api/survey
-// Body example:
-// {
-//   "userId": "ammar",
-//   "stress": 8,
-//   "mood": 3,
-//   "sleep": 4
-// }
+// -------------------------------------------------
+// 3) POST /api/survey
+//    Thunder: POST http://localhost:3000/api/survey
+//    Body JSON:
+//    {
+//       "userId": "ammar",
+//       "stress": 8,
+//       "mood": 3,
+//       "sleep": 4
+//    }
+// -------------------------------------------------
 app.post("/api/survey", async (req, res) => {
   try {
     const { userId, stress, mood, sleep } = req.body;
@@ -88,7 +91,6 @@ app.post("/api/survey", async (req, res) => {
       return res.status(400).json({ error: "userId is required." });
     }
 
-    // Basic numeric checks (optional but safer)
     const s = Number(stress);
     const m = Number(mood);
     const sl = Number(sleep);
@@ -115,7 +117,7 @@ app.post("/api/survey", async (req, res) => {
       recommendations.push(
         "Avoid screens 30 minutes before bed",
         "Rain / nature sounds for sleep",
-        "4-7-8 breathing technique before sleep"
+        "4-7-8 breathing technique before sleeping"
       );
     } else {
       outcome = "Relatively balanced, but can improve";
@@ -129,30 +131,29 @@ app.post("/api/survey", async (req, res) => {
     // ---------- Gemini explanation based on scores ----------
     let geminiExplanation = "";
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_ID });
 
       const explainPrompt = `
-        You are a gentle, supportive mental wellbeing assistant.
+        You are a calm and supportive mental wellbeing assistant.
         A user completed a wellbeing survey with these scores (0–10 scale):
         - Stress: ${s}
         - Mood: ${m}
         - Sleep: ${sl}
 
-        From a simple rule-based system, their outcome is: "${outcome}".
+        Our simple rule-based system gave them this outcome: "${outcome}".
 
-        Please write a short explanation (80–150 words) that:
-        - Reflects their state empathetically (but not dramatically).
+        Write a short explanation (80–150 words) that:
+        - Acknowledges how they might be feeling.
         - Briefly explains why this outcome makes sense.
-        - Encourages small, practical self-care steps.
+        - Encourages small, realistic self-care steps.
         - Is safe and suitable for teenagers.
-        - Does NOT give medical, diagnostic, or medication advice.
+        - Does NOT give any medical, diagnostic, or medication advice.
       `;
 
       const gemResult = await model.generateContent(explainPrompt);
       geminiExplanation = gemResult.response.text();
     } catch (gErr) {
-      console.error("Gemini explanation error:", gErr);
-      // Don't fail the whole request if Gemini breaks
+      console.error("⚠ Gemini explanation error:", gErr?.message || gErr);
       geminiExplanation = "";
     }
 
@@ -165,7 +166,7 @@ app.post("/api/survey", async (req, res) => {
       timestamp: new Date().toISOString(),
     };
 
-    // Save in memory so GET /api/recommendation/:userId can fetch it
+    // Save in memory
     surveyData.set(userId, result);
 
     return res.json({
@@ -174,12 +175,15 @@ app.post("/api/survey", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error in /api/survey:", error);
-    res.status(500).json({ error: "Error processing survey." });
+    console.error("❌ Error in /api/survey:", error?.message || error);
+    return res.status(500).json({ error: "Error processing survey." });
   }
 });
 
-// GET /api/recommendation/:userId
+// -------------------------------------------------
+// 4) GET /api/recommendation/:userId
+//    Thunder: GET http://localhost:3000/api/recommendation/ammar
+// -------------------------------------------------
 app.get("/api/recommendation/:userId", (req, res) => {
   const { userId } = req.params;
 
@@ -200,5 +204,5 @@ app.get("/api/recommendation/:userId", (req, res) => {
 // --------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
+  console.log(`🚀 Backend running at http://localhost:${PORT}`);
 });
