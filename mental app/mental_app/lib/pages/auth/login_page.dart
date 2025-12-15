@@ -1,4 +1,4 @@
- // lib/pages/login_page.dart
+// lib/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 import '../home/home_page.dart';
@@ -26,6 +26,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -49,10 +51,10 @@ class _LoginPageState extends State<LoginPage> {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                          ),
-                          ),
-                        const SizedBox(height: 6),
-                      const Text(
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
                     'and track your progress daily',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70),
@@ -98,29 +100,29 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Log in button (mock)
+                  // Log in button
                   ElevatedButton(
-                 onPressed: () {
-                  Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-        builder: (_) => const HomePage(), // 👈 change to your homepage class name if needed
-      ),
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF3C5C5A),
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(30),
-    ),
-  ),
-  child: const Text(
-    'LOG IN',
-    style: TextStyle(color: Colors.white, letterSpacing: 1),
-  ),
-),
-
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HomePage(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3C5C5A),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      'LOG IN',
+                      style: TextStyle(color: Colors.white, letterSpacing: 1),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   // Divider "or"
                   Row(
@@ -157,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Text(
                           'Sign up',
                           style: TextStyle(
-                            color: Colors.lightBlueAccent,
+                            color: Colors.white,
                             decoration: TextDecoration.underline,
                           ),
                         ),

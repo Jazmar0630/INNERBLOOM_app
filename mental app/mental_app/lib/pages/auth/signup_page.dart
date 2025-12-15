@@ -1,4 +1,4 @@
- // lib/pages/signup_page.dart
+// lib/pages/signup_page.dart
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 
@@ -30,6 +30,8 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -184,35 +186,35 @@ class _SignUpPageState extends State<SignUpPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  // “Already have an account? Log in” link
-Center(
-  child: Wrap(
-    crossAxisAlignment: WrapCrossAlignment.center,
-    spacing: 6,
-    children: [
-      const Text(
-        'Already have an account?',
-        style: TextStyle(color: Colors.white70),
-      ),
-      InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginPage()),
-          );
-        },
-        child: const Text(
-          'Log in',
-          style: TextStyle(
-            color: Colors.lightBlueAccent,
-            decoration: TextDecoration.underline,
-          ),
-        ),
-      ),
-    ],
-  ),
-),
-
+                  
+                  // "Already have an account? Log in" link
+                  Center(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      children: [
+                        const Text(
+                          'Already have an account?',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const LoginPage()),
+                            );
+                          },
+                          child: const Text(
+                            'Log in',
+                            style: TextStyle(
+                              color: Colors.lightBlueAccent,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
