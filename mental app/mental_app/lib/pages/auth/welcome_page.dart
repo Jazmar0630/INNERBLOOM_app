@@ -37,20 +37,15 @@ class WelcomePage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // CIRCLE ICON (MOVED HERE)
-                  Container(
-                  width: 220,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
-    ),
+                  // MEDITATION IMAGE (NO CIRCLE, BIGGER SIZE)
+                  Image.asset(
+                    'lib/assets/images/Innerbloom.png',
+                    width: 280,
+                    height: 280,
+                    fit: BoxFit.contain,
+                  ),
 
-    const SizedBox(height: 32),
-
-                   
+                  const SizedBox(height: 32),
 
                   const SizedBox(height: 30),
 
