@@ -37,38 +37,47 @@ class _LoginPageState extends State<LoginPage> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 20),
+                  
+                  // Title
                   const Text(
                     'Log in',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
+                  
+                  // Subtitle
                   const Text(
                     'and track your progress daily',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 40),
 
-                  // Email
+                  // Email Field
                   TextFormField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
                       hintText: 'Email',
+                      hintStyle: TextStyle(color: Colors.black54),
                       fillColor: Colors.white,
                       filled: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                         borderSide: BorderSide.none,
@@ -82,14 +91,16 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Password
+                  // Password Field
                   TextFormField(
                     controller: _password,
                     obscureText: true,
                     decoration: const InputDecoration(
                       hintText: 'Password',
+                      hintStyle: TextStyle(color: Colors.black54),
                       fillColor: Colors.white,
                       filled: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                         borderSide: BorderSide.none,
@@ -98,9 +109,9 @@ class _LoginPageState extends State<LoginPage> {
                     validator: (v) =>
                         (v == null || v.isEmpty) ? 'Enter your password' : null,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Log in button
+                  // Log in Button
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -112,44 +123,65 @@ class _LoginPageState extends State<LoginPage> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3C5C5A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: const Text(
                       'LOG IN',
-                      style: TextStyle(color: Colors.white, letterSpacing: 1),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // Divider "or"
                   Row(
                     children: const [
-                      Expanded(child: Divider(color: Colors.white38)),
+                      Expanded(child: Divider(color: Colors.white54, thickness: 1)),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text('or',
-                            style: TextStyle(color: Colors.white70)),
+                        padding: EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Text(
+                          'or',
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
                       ),
-                      Expanded(child: Divider(color: Colors.white38)),
+                      Expanded(child: Divider(color: Colors.white54, thickness: 1)),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 24),
 
-                  // Social + "Sign up" link (beside Apple icon)
+                  // Social Login Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _socialButton(Icons.g_mobiledata),
+                      _socialButton('G', isGoogle: true),
                       const SizedBox(width: 16),
-                      _socialButton(Icons.facebook),
+                      _socialButton('f', isFacebook: true),
                       const SizedBox(width: 16),
-                      _socialButton(Icons.apple),
-                      const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: () {
+                      _socialButton('', isApple: true),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Sign up text
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don't have an account?  ",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -157,16 +189,18 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         },
                         child: const Text(
-                          'Sign up',
+                          'Create one',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF5B9FFF),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -176,14 +210,30 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  static Widget _socialButton(IconData icon) {
+  static Widget _socialButton(String label, {bool isGoogle = false, bool isFacebook = false, bool isApple = false}) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white70),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: Colors.white, size: 28),
+      child: Center(
+        child: isApple
+            ? const Icon(Icons.apple, size: 32, color: Colors.black)
+            : Text(
+                label,
+                style: TextStyle(
+                  fontSize: isGoogle ? 32 : 28,
+                  fontWeight: FontWeight.bold,
+                  color: isGoogle
+                      ? const Color(0xFF4285F4)
+                      : isFacebook
+                          ? const Color(0xFF1877F2)
+                          : Colors.black,
+                ),
+              ),
+      ),
     );
   }
 }

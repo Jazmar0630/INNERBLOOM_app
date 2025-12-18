@@ -124,12 +124,12 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                       const Text(
                         'I have read the ',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: Colors.black),
                       ),
                       const Text(
                         'privacy policy',
                         style: TextStyle(
-                          color: Colors.lightBlueAccent,
+                          color: Color.fromARGB(255, 28, 47, 255),
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -148,7 +148,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3C5C5A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 25),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -163,13 +163,13 @@ class _SignUpPageState extends State<SignUpPage> {
                   // Divider "or"
                   Row(
                     children: const [
-                      Expanded(child: Divider(color: Colors.white38)),
+                      Expanded(child: Divider(color: Colors.black)),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8.0),
                         child:
-                            Text('or', style: TextStyle(color: Colors.white70)),
+                            Text('or', style: TextStyle(color: Colors.black)),
                       ),
-                      Expanded(child: Divider(color: Colors.white38)),
+                      Expanded(child: Divider(color: Colors.black)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -195,7 +195,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       children: [
                         const Text(
                           'Already have an account?',
-                          style: TextStyle(color: Colors.white70),
+                          style: TextStyle(color: Colors.black),
                         ),
                         InkWell(
                           onTap: () {
@@ -207,7 +207,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           child: const Text(
                             'Log in',
                             style: TextStyle(
-                              color: Colors.lightBlueAccent,
+                              color: Color.fromARGB(255, 28, 47, 255),
                               decoration: TextDecoration.underline,
                             ),
                           ),
