@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.2.0
   cupertino_icons: ^1.0.6
   shared_preferences: ^2.5.3
   fl_chart: ^1.1.1
@@ -24,7 +25,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-  dependencies:
-  http: ^1.2.0
+ 
 
