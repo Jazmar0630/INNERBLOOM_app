@@ -27,4 +27,7 @@ flutter:
      
      assets:
        - lib/assets/images/Innerbloom.png
+
+dependencies:
+  http: ^1.2.0
        
