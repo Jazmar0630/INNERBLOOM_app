@@ -1,6 +1,6 @@
- import 'dart:convert';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../config/api_config.dart';
+import 'package:mental_app/config/api_config.dart';
 
 class RelaxationService {
   static Future<String> generateRelaxation({
