@@ -1,10 +1,13 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import 'dart:io'; // for exit(0)
-import 'package:mental_app/services/relaxation_service.dart';
+
+// ✅ CHANGE THIS PATH to your actual services file location
+import '../../services/relaxation_service.dart';
+
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key});
 
@@ -16,7 +19,11 @@ class _RelaxationPageState extends State<RelaxationPage>
     with SingleTickerProviderStateMixin {
   int _navIndex = 2; // we are on Relax tab
   int _selectedCategory = 0;
-  
+
+  // ✅ NEW: API Result State
+  String _relaxationText = '';
+  bool _isLoadingRelaxation = false;
+
   // Overlay animation and video player
   late AnimationController _overlayController;
   late Animation<Offset> _overlayOffset;
@@ -78,6 +85,32 @@ class _RelaxationPageState extends State<RelaxationPage>
         .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
   }
 
+  // ✅ NEW: PUT YOUR FUNCTION HERE (inside State class)
+  Future<void> _callRelaxationApi() async {
+    setState(() {
+      _isLoadingRelaxation = true;
+      _relaxationText = '';
+    });
+
+    try {
+      final result = await RelaxationService.generateRelaxation(
+        mood: 'calm',
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _relaxationText = result;
+        _isLoadingRelaxation = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _relaxationText = 'Error: $e';
+        _isLoadingRelaxation = false;
+      });
+    }
+  }
+
   void _onNavTap(int index) {
     if (index == _navIndex) return;
     setState(() => _navIndex = index);
@@ -121,6 +154,10 @@ class _RelaxationPageState extends State<RelaxationPage>
       setState(() {
         _isOverlayVisible = false;
         _dragOffset = 0;
+
+        // Optional: clear result when closing overlay
+        _relaxationText = '';
+        _isLoadingRelaxation = false;
       });
       _overlayYoutubeController?.pause();
       _overlayYoutubeController?.dispose();
@@ -241,7 +278,7 @@ class _RelaxationPageState extends State<RelaxationPage>
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                  color: isSelected ? const Color(0xFF3C5C5A) : Colors.white
+                                  color: isSelected ? const Color(0xFF3C5C5A) : Colors.white,
                                 ),
                               ),
                             ),
@@ -274,6 +311,7 @@ class _RelaxationPageState extends State<RelaxationPage>
               ),
             ),
           ),
+
           // Video overlay
           if (_isOverlayVisible) _buildOverlay(),
         ],
@@ -338,37 +376,17 @@ class _RelaxationPageState extends State<RelaxationPage>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
-                            onVerticalDragUpdate: (details) {
-                              setState(() {
-                                _dragOffset += details.delta.dy;
-                              });
-                            },
-                            onVerticalDragEnd: (details) {
-                              if (_dragOffset > 100) {
-                                _hideOverlay();
-                              } else {
-                                setState(() {
-                                  _dragOffset = 0;
-                                });
-                              }
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: MouseRegion(
-                                cursor: SystemMouseCursors.grab,
-                                child: Container(
-                                  width: 40,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[400],
-                                    borderRadius: BorderRadius.circular(2.5),
-                                  ),
-                                ),
-                              ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: 40,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(2.5),
                             ),
                           ),
                           const SizedBox(height: 24),
+
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: ClipRRect(
@@ -393,7 +411,57 @@ class _RelaxationPageState extends State<RelaxationPage>
                               ),
                             ),
                           ),
+
+                          const SizedBox(height: 20),
+
+                          // ✅ NEW: Button to call API + show result
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: _isLoadingRelaxation ? null : _callRelaxationApi,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF3C5C5A),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: _isLoadingRelaxation
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        )
+                                      : const Text(
+                                          'Generate Relaxation Text',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                        ),
+                                ),
+                                const SizedBox(height: 12),
+
+                                if (_relaxationText.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(color: Colors.grey[300]!),
+                                    ),
+                                    child: Text(
+                                      _relaxationText,
+                                      style: const TextStyle(fontSize: 13, height: 1.4),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
                           const SizedBox(height: 24),
+
+                          // existing title/subtitle and controls...
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
@@ -424,140 +492,10 @@ class _RelaxationPageState extends State<RelaxationPage>
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.grey[400]!,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    icon: const Icon(
-                                      Icons.favorite_outline,
-                                      color: Colors.black,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {},
-                                  ),
-                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    trackHeight: 4,
-                                    thumbShape: const RoundSliderThumbShape(
-                                      enabledThumbRadius: 6,
-                                    ),
-                                    activeTrackColor: const Color(0xFF3C5C5A),
-                                    inactiveTrackColor: Colors.grey[300],
-                                  ),
-                                  child: Slider(
-                                    value: _overlayYoutubeController
-                                            ?.value.position.inSeconds
-                                            .toDouble() ??
-                                        0,
-                                    max: _overlayYoutubeController
-                                            ?.metadata.duration.inSeconds
-                                            .toDouble() ??
-                                        1,
-                                    onChanged: (value) {
-                                      _overlayYoutubeController?.seekTo(
-                                        Duration(seconds: value.toInt()),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _formatDuration(
-                                        _overlayYoutubeController?.value.position ??
-                                            Duration.zero,
-                                      ),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDuration(
-                                        Duration(
-                                          seconds: _overlayYoutubeController
-                                                  ?.metadata.duration.inSeconds ??
-                                              0,
-                                        ),
-                                      ),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  iconSize: 40,
-                                  icon: const Icon(
-                                    Icons.replay_10,
-                                    color: Color(0xFF7A9BA3),
-                                  ),
-                                  onPressed: () => _seekOverlayRelative(
-                                    const Duration(seconds: -10),
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Color(0xFF3C5C5A),
-                                  ),
-                                  child: IconButton(
-                                    iconSize: 36,
-                                    icon: Icon(
-                                      _overlayYoutubeController?.value.isPlaying ==
-                                              true
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: _toggleOverlayPlayPause,
-                                  ),
-                                ),
-                                const SizedBox(width: 20),
-                                IconButton(
-                                  iconSize: 40,
-                                  icon: const Icon(
-                                    Icons.forward_10,
-                                    color: Color(0xFF7A9BA3),
-                                  ),
-                                  onPressed: () => _seekOverlayRelative(
-                                    const Duration(seconds: 10),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+
                           const SizedBox(height: 24),
                         ],
                       ),
