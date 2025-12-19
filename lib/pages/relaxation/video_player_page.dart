@@ -11,7 +11,7 @@ class VideoPlayerPage extends StatefulWidget {
 class _VideoPlayerPageState extends State<VideoPlayerPage>
     with SingleTickerProviderStateMixin {
   late YoutubePlayerController _controller;
-  double _dragOffset = 0;
+ 
 
   // ⭐ CHANGE YOUTUBE VIDEO ID HERE ⭐
   // Replace 'dQw4w9WgXcQ' with your desired YouTube video ID
