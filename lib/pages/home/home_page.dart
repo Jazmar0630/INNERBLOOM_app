@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                     builder: (context) => IconButton(
                       onPressed: () => Scaffold.of(context).openDrawer(),
                       icon: const Icon(Icons.menu, color: Colors.white),
-                    ),
+                    ),  
                   ),
                   const CircleAvatar(
                     radius: 18,

@@ -16,7 +16,7 @@ class MoodResultService {
       final data = jsonDecode(response.body);
 
       // ✅ Make sure backend returns { "result": "..." }
-      return (data['result'] ?? '').toString();
+      return (data['relaxation'] ?? '').toString();
     } else {
       throw Exception('Failed (${response.statusCode})');
     }
