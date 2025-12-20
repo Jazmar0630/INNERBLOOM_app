@@ -56,22 +56,21 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // sliders (same as page 1)
+              // ✅ sliders (Page 2 uses q4, q5, q6)
               _sliderBlock(
-                'How stressed do you feel?',
-                data.q1,
-                (v) => setState(() => data.q1 = v),
+                'I feel overwhelmed by tasks or responsibilities today.',
+                data.q4,
+                (v) => setState(() => data.q4 = v),
               ),
               _sliderBlock(
-                'How well did you sleep?',
-                data.q2,
-                (v) => setState(() => data.q2 = v),
+                'I had trouble falling asleep or staying asleep.',
+                data.q5,
+                (v) => setState(() => data.q5 = v),
               ),
               _sliderBlock(
-                'How focused are you today?',
-                data.q3,
-                (v) => setState(() => data.q3 = v),
+                'I got distracted easily, even during simple tasks.',
+                data.q6,
+                (v) => setState(() => data.q6 = v),
               ),
 
               const Spacer(),
@@ -90,12 +89,18 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
-                      Text('Stress: ${data.q1.toStringAsFixed(0)} / 4',
-                          style: const TextStyle(color: Colors.white)),
-                      Text('Sleep:  ${data.q2.toStringAsFixed(0)} / 4',
-                          style: const TextStyle(color: Colors.white)),
-                      Text('Focus:  ${data.q3.toStringAsFixed(0)} / 4',
-                          style: const TextStyle(color: Colors.white)),
+                      Text(
+                        'Stress (P2): ${data.q4.toStringAsFixed(0)} / 4',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Text(
+                        'Sleep  (P2): ${data.q5.toStringAsFixed(0)} / 4',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Text(
+                        'Focus  (P2): ${data.q6.toStringAsFixed(0)} / 4',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                       const SizedBox(height: 24),
 
                       Row(
@@ -107,25 +112,27 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-  child: ElevatedButton(
-    onPressed: () {
-      Navigator.push(
-         context,
-  MaterialPageRoute(builder: (_) => MoodResultPage()),
-      );
-    },
-    child: const Text('Finish'),
-  ),
-),
 
+                          // ✅ Finish -> go Result page, pass data
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MoodResultPage(data: data),
+                                  ),
+                                );
+                              },
+                              child: const Text('Finish'),
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
               ),
-
             ],
           ),
         ),

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../mood/mood_appreciation.dart';
+import '../model/mood_survey_data.dart';
 
 class MoodResultPage extends StatefulWidget {
-  const MoodResultPage({super.key});
+  final MoodSurveyData data;
+
+  const MoodResultPage({super.key, required this.data});
 
   @override
   State<MoodResultPage> createState() => _MoodResultPageState();
@@ -62,6 +65,80 @@ class _MoodResultPageState extends State<MoodResultPage>
         .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
   }
 
+  // -----------------------
+  // Simple scoring from q1..q6
+  // -----------------------
+  double get _totalScore {
+    final d = widget.data;
+    return d.q1 + d.q2 + d.q3 + d.q4 + d.q5 + d.q6;
+  }
+
+  double get _avgScore => _totalScore / 6;
+
+  String get _headline {
+    final a = _avgScore;
+    if (a >= 3.0) return "You’ve been under a lot of pressure lately.";
+    if (a >= 2.0) return "You might be feeling a bit stressed or tired.";
+    return "You seem fairly okay today — keep it up.";
+  }
+
+  String get _subtext {
+    final a = _avgScore;
+    if (a >= 3.0) {
+      return "Try something gentle and calming. Small steps count, and you don’t need to handle everything at once.";
+    }
+    if (a >= 2.0) {
+      return "A short reset can help. Try breathing slowly, get some water, and take a quick break.";
+    }
+    return "Still, it’s good to do a short relaxation to stay balanced and focused.";
+  }
+
+  Widget _buildSurveySummaryCard() {
+    final d = widget.data;
+
+    Widget row(String label, double value) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13)),
+          Text('${value.toStringAsFixed(0)} / 4',
+              style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Your Survey Summary',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+
+          row('Stress (Q1)', d.q1),
+          row('Mood (Q2)', d.q2),
+          row('Energy (Q3)', d.q3),
+          const Divider(),
+
+          row('Overwhelmed (Q4)', d.q4),
+          row('Sleep Issues (Q5)', d.q5),
+          row('Focus Difficulty (Q6)', d.q6),
+        ],
+      ),
+    );
+  }
+
+  // -----------------------
+  // Video overlay controls
+  // -----------------------
   void _playVideo(int index, String videoId) {
     _overlayYoutubeController?.pause();
     _overlayYoutubeController?.dispose();
@@ -165,46 +242,56 @@ class _MoodResultPageState extends State<MoodResultPage>
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  const CircleAvatar(
+                children: const [
+                  Icon(Icons.menu, color: Colors.white),
+                  CircleAvatar(
                     radius: 18,
                     backgroundColor: Colors.white24,
                     child: Icon(Icons.person, color: Colors.white),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search music, audio, videos',
-                  filled: true,
-                  fillColor: Colors.white,
-                  prefixIcon: const Icon(Icons.search),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
+              const SizedBox(height: 14),
+
+              Text(
+                _headline,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 8),
+              Text(
+                _subtext,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Average score: ${_avgScore.toStringAsFixed(1)} / 4  •  Total: ${_totalScore.toStringAsFixed(0)} / 24",
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+
+              // ✅ Summary card (q1-q6)
+              _buildSurveySummaryCard(),
+
               const Text(
-                "It looks like you've been through a lot lately. "
-                "Here's something that can help you feel better and boost back your confidence:",
+                "Here are some options you can listen/watch:",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
               Expanded(
                 child: ListView.separated(
-                  scrollDirection: Axis.vertical,
                   itemCount: _items.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
@@ -267,34 +354,13 @@ class _MoodResultPageState extends State<MoodResultPage>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
-                            onVerticalDragUpdate: (details) {
-                              setState(() {
-                                _dragOffset += details.delta.dy;
-                              });
-                            },
-                            onVerticalDragEnd: (details) {
-                              if (_dragOffset > 100) {
-                                _hideOverlay();
-                              } else {
-                                setState(() {
-                                  _dragOffset = 0;
-                                });
-                              }
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: MouseRegion(
-                                cursor: SystemMouseCursors.grab,
-                                child: Container(
-                                  width: 40,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[400],
-                                    borderRadius: BorderRadius.circular(2.5),
-                                  ),
-                                ),
-                              ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: 40,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(2.5),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -316,9 +382,7 @@ class _MoodResultPageState extends State<MoodResultPage>
                                         controller: _overlayYoutubeController!,
                                         showVideoProgressIndicator: true,
                                       )
-                                    : const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
+                                    : const Center(child: CircularProgressIndicator()),
                               ),
                             ),
                           ),
@@ -327,7 +391,6 @@ class _MoodResultPageState extends State<MoodResultPage>
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   child: Column(
@@ -338,7 +401,6 @@ class _MoodResultPageState extends State<MoodResultPage>
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w700,
-                                          color: Colors.black,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -346,146 +408,76 @@ class _MoodResultPageState extends State<MoodResultPage>
                                         _items[_selectedItemIndex].subtitle,
                                         style: const TextStyle(
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w400,
                                           color: Colors.black54,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.grey[400]!,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    icon: const Icon(
-                                      Icons.favorite_outline,
-                                      color: Colors.black,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {},
-                                  ),
-                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 18),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
                               children: [
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                    trackHeight: 4,
-                                    thumbShape: const RoundSliderThumbShape(
-                                      enabledThumbRadius: 6,
-                                    ),
-                                    activeTrackColor: const Color(0xFF3C5C5A),
-                                    inactiveTrackColor: Colors.grey[300],
-                                  ),
-                                  child: Slider(
-                                    value: _overlayYoutubeController
-                                            ?.value.position.inSeconds
-                                            .toDouble() ??
-                                        0,
-                                    max: _overlayYoutubeController
-                                            ?.metadata.duration.inSeconds
-                                            .toDouble() ??
-                                        1,
-                                    onChanged: (value) {
-                                      _overlayYoutubeController?.seekTo(
-                                        Duration(seconds: value.toInt()),
-                                      );
-                                    },
-                                  ),
+                                Slider(
+                                  value: _overlayYoutubeController?.value.position.inSeconds.toDouble() ?? 0,
+                                  max: _overlayYoutubeController?.metadata.duration.inSeconds.toDouble() ?? 1,
+                                  onChanged: (value) {
+                                    _overlayYoutubeController?.seekTo(Duration(seconds: value.toInt()));
+                                  },
                                 ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      _formatDuration(
-                                        _overlayYoutubeController?.value.position ??
-                                            Duration.zero,
-                                      ),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black54,
-                                      ),
+                                      _formatDuration(_overlayYoutubeController?.value.position ?? Duration.zero),
+                                      style: const TextStyle(fontSize: 12, color: Colors.black54),
                                     ),
                                     Text(
                                       _formatDuration(
-                                        Duration(
-                                          seconds: _overlayYoutubeController
-                                                  ?.metadata.duration.inSeconds ??
-                                              0,
-                                        ),
+                                        Duration(seconds: _overlayYoutubeController?.metadata.duration.inSeconds ?? 0),
                                       ),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black54,
-                                      ),
+                                      style: const TextStyle(fontSize: 12, color: Colors.black54),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 28),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  iconSize: 40,
-                                  icon: const Icon(
-                                    Icons.replay_10,
-                                    color: Color(0xFF7A9BA3),
-                                  ),
-                                  onPressed: () => _seekOverlayRelative(
-                                    const Duration(seconds: -10),
-                                  ),
+                          const SizedBox(height: 18),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                iconSize: 40,
+                                icon: const Icon(Icons.replay_10, color: Color(0xFF7A9BA3)),
+                                onPressed: () => _seekOverlayRelative(const Duration(seconds: -10)),
+                              ),
+                              const SizedBox(width: 16),
+                              Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFF3C5C5A),
                                 ),
-                                const SizedBox(width: 20),
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Color(0xFF3C5C5A),
+                                child: IconButton(
+                                  iconSize: 36,
+                                  icon: Icon(
+                                    _overlayYoutubeController?.value.isPlaying == true ? Icons.pause : Icons.play_arrow,
+                                    color: Colors.white,
                                   ),
-                                  child: IconButton(
-                                    iconSize: 36,
-                                    icon: Icon(
-                                      _overlayYoutubeController?.value.isPlaying ==
-                                              true
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: _toggleOverlayPlayPause,
-                                  ),
+                                  onPressed: _toggleOverlayPlayPause,
                                 ),
-                                const SizedBox(width: 20),
-                                IconButton(
-                                  iconSize: 40,
-                                  icon: const Icon(
-                                    Icons.forward_10,
-                                    color: Color(0xFF7A9BA3),
-                                  ),
-                                  onPressed: () => _seekOverlayRelative(
-                                    const Duration(seconds: 10),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 16),
+                              IconButton(
+                                iconSize: 40,
+                                icon: const Icon(Icons.forward_10, color: Color(0xFF7A9BA3)),
+                                onPressed: () => _seekOverlayRelative(const Duration(seconds: 10)),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 24),
                         ],
