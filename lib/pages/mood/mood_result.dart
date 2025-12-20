@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../mood/mood_appreciation.dart';
 import '../model/mood_survey_data.dart';
+import '../../services/mood_result_service.dart'; // ✅ FIX PATH (use ../services not ../../)
 
 class MoodResultPage extends StatefulWidget {
   final MoodSurveyData data;
@@ -20,6 +21,10 @@ class _MoodResultPageState extends State<MoodResultPage>
   YoutubePlayerController? _overlayYoutubeController;
   int _selectedItemIndex = 0;
   double _dragOffset = 0;
+
+  // ✅ Backend response state
+  bool _isLoadingText = false;
+  String _backendText = '';
 
   final List<_RelaxItem> _items = const [
     _RelaxItem(
@@ -93,6 +98,44 @@ class _MoodResultPageState extends State<MoodResultPage>
     return "Still, it’s good to do a short relaxation to stay balanced and focused.";
   }
 
+  // ✅ Detect a mood label from survey
+  String _detectedMoodLabel() {
+    final a = _avgScore;
+    if (a >= 3.0) return "overwhelmed";
+    if (a >= 2.0) return "stressed";
+    if (a >= 1.2) return "tired";
+    return "calm";
+  }
+
+  // ✅ Call backend to generate suggestion text
+  Future<void> _fetchBackendTextForCurrentMood() async {
+    final moodLabel = _detectedMoodLabel();
+    final selectedTitle = _items[_selectedItemIndex].title;
+
+    // You can send both mood + selected content to backend (so it can tailor text)
+    final moodPayload = '$moodLabel | content: $selectedTitle';
+
+    setState(() {
+      _isLoadingText = true;
+      _backendText = '';
+    });
+
+    try {
+      final text = await MoodResultService.getSuggestion(mood: moodPayload);
+      if (!mounted) return;
+      setState(() {
+        _backendText = text;
+        _isLoadingText = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _backendText = 'Error: $e';
+        _isLoadingText = false;
+      });
+    }
+  }
+
   Widget _buildSurveySummaryCard() {
     final d = widget.data;
 
@@ -122,16 +165,47 @@ class _MoodResultPageState extends State<MoodResultPage>
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
-
           row('Stress (Q1)', d.q1),
           row('Mood (Q2)', d.q2),
           row('Energy (Q3)', d.q3),
           const Divider(),
-
           row('Overwhelmed (Q4)', d.q4),
           row('Sleep Issues (Q5)', d.q5),
           row('Focus Difficulty (Q6)', d.q6),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackendSuggestionCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: _isLoadingText
+            ? const Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(child: Text("Generating suggestion...")),
+                ],
+              )
+            : Text(
+                _backendText.isEmpty
+                    ? "Your mood-based suggestion will appear here."
+                    : _backendText,
+                style: const TextStyle(fontSize: 13, height: 1.35),
+              ),
       ),
     );
   }
@@ -154,8 +228,14 @@ class _MoodResultPageState extends State<MoodResultPage>
 
     setState(() {
       _isOverlayVisible = true;
+      _backendText = '';
+      _isLoadingText = false;
     });
+
     _overlayController.forward();
+
+    // ✅ Fetch backend response whenever user taps an item
+    _fetchBackendTextForCurrentMood();
   }
 
   void _hideOverlay() {
@@ -273,7 +353,7 @@ class _MoodResultPageState extends State<MoodResultPage>
               ),
               const SizedBox(height: 10),
               Text(
-                "Average score: ${_avgScore.toStringAsFixed(1)} / 4  •  Total: ${_totalScore.toStringAsFixed(0)} / 24",
+                "Detected mood: ${_detectedMoodLabel()}  •  Avg: ${_avgScore.toStringAsFixed(1)} / 4",
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
 
@@ -281,7 +361,7 @@ class _MoodResultPageState extends State<MoodResultPage>
               _buildSurveySummaryCard(),
 
               const Text(
-                "Here are some options you can listen/watch:",
+                "Choose one (each opens a default video):",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -363,7 +443,9 @@ class _MoodResultPageState extends State<MoodResultPage>
                               borderRadius: BorderRadius.circular(2.5),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 18),
+
+                          // Video player
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: ClipRRect(
@@ -386,7 +468,15 @@ class _MoodResultPageState extends State<MoodResultPage>
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+
+                          const SizedBox(height: 16),
+
+                          // ✅ Backend suggestion card (mood-based)
+                          _buildBackendSuggestionCard(),
+
+                          const SizedBox(height: 18),
+
+                          // Title + subtitle
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
@@ -417,7 +507,10 @@ class _MoodResultPageState extends State<MoodResultPage>
                               ],
                             ),
                           ),
+
                           const SizedBox(height: 18),
+
+                          // Seek bar
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
@@ -447,7 +540,10 @@ class _MoodResultPageState extends State<MoodResultPage>
                               ],
                             ),
                           ),
+
                           const SizedBox(height: 18),
+
+                          // Controls
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -465,7 +561,9 @@ class _MoodResultPageState extends State<MoodResultPage>
                                 child: IconButton(
                                   iconSize: 36,
                                   icon: Icon(
-                                    _overlayYoutubeController?.value.isPlaying == true ? Icons.pause : Icons.play_arrow,
+                                    _overlayYoutubeController?.value.isPlaying == true
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
                                     color: Colors.white,
                                   ),
                                   onPressed: _toggleOverlayPlayPause,
