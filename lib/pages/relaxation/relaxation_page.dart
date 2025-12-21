@@ -291,11 +291,17 @@ class _RelaxationPageState extends State<RelaxationPage>
     _overlayYoutubeController?.dispose();
 
     _selectedItemIndex = index;
+    
+    // ⭐ IMPROVED: Better loading flags for faster playback
     _overlayYoutubeController = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
         autoPlay: true,
         mute: false,
+        enableCaption: false,
+        forceHD: true, 
+        disableDragSeek: false,
+        loop: false,
       ),
     );
 
@@ -303,6 +309,9 @@ class _RelaxationPageState extends State<RelaxationPage>
       _isOverlayVisible = true;
     });
     _overlayController.forward();
+    
+    // ⭐ DEBUG: Print video ID to console
+    print('🎬 Attempting to play video: $videoId');
   }
 
   void _hideOverlay() {
@@ -590,10 +599,16 @@ class _RelaxationPageState extends State<RelaxationPage>
                                 ),
                                 height: 240,
                                 child: _overlayYoutubeController != null
-                                    ? YoutubePlayer(
-                                        controller: _overlayYoutubeController!,
-                                        showVideoProgressIndicator: true,
-                                      )
+                                   ? YoutubePlayerBuilder(
+                                    player: YoutubePlayer(
+                                      controller: _overlayYoutubeController!,
+                                      showVideoProgressIndicator: true,
+                                      ),
+                                      builder: (context, player) {
+                                        return player;
+                                        },
+                                        )
+
                                     : const Center(
                                         child: CircularProgressIndicator(),
                                       ),
