@@ -124,12 +124,12 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                       const Text(
                         'I have read the ',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
                       ),
                       const Text(
                         'privacy policy',
                         style: TextStyle(
-                          color: Colors.lightBlueAccent,
+                          color: Color.fromARGB(255, 86, 91, 255),
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -195,7 +195,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       children: [
                         const Text(
                           'Already have an account?',
-                          style: TextStyle(color: Colors.white70),
+                          style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
                         ),
                         InkWell(
                           onTap: () {
@@ -207,7 +207,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           child: const Text(
                             'Log in',
                             style: TextStyle(
-                              color: Colors.lightBlueAccent,
+                              color: Color.fromARGB(255, 86, 91, 255),
                               decoration: TextDecoration.underline,
                             ),
                           ),
