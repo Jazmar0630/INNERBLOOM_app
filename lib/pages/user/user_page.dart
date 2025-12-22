@@ -1,4 +1,4 @@
- // user_page.dart
+// user_page.dart
 import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
@@ -16,30 +16,39 @@ class UserPage extends StatefulWidget {
 
 class _UserPageState extends State<UserPage> {
   int _navIndex = 3; // we are on the User tab
-  late String _uid;
+  String? _uid;
 
   @override
   void initState() {
     super.initState();
-    _uid = FirebaseAuth.instance.currentUser!.uid;
+
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (!mounted) return;
+
+      setState(() => _uid = user?.uid);
+
+      if (user != null) {
+        _markTodayActive();
+      }
+    });
   }
 
-String _weekdayKey(DateTime dt) {
-  const keys = ['mon','tue','wed','thu','fri','sat','sun'];
-  return keys[dt.weekday - 1];
-}
+  String _weekdayKey(DateTime dt) {
+    const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    return keys[dt.weekday - 1];
+  }
 
-Future<void> _markTodayActive() async {
-  final today = _weekdayKey(DateTime.now());
+  Future<void> _markTodayActive() async {
+    if (_uid == null) return;
 
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(_uid)
-      .set({
-        'activeDays.$today': true,
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-}
+    final today = _weekdayKey(DateTime.now());
+
+    await FirebaseFirestore.instance.collection('users').doc(_uid).set({
+      'activeDays.$today': true,
+      'lastActiveAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   void _onNavTap(int index) {
     if (index == _navIndex) return;
 
@@ -142,67 +151,101 @@ Future<void> _markTodayActive() async {
 
                 const SizedBox(height: 24),
 
-                // DAILY CHECK-IN CARD
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Daily check in',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Colors.black87,
+                // ✅ DAILY CHECK-IN CARD (CLICKABLE)
+                InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () async {
+                    if (_uid == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please login first')),
+                      );
+                      return;
+                    }
+
+                    await _markTodayActive();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Checked in for today ✅')),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Daily check in',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Check in daily and track your progress everyday!',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Check in daily and track your progress everyday!',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // Row of days
-                      StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(_uid)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) return const SizedBox();
+                        // Row of days
+                        _uid == null
+                            ? const Text(
+                                'Please login first',
+                                style: TextStyle(color: Colors.black54),
+                              )
+                            : StreamBuilder<
+                                DocumentSnapshot<Map<String, dynamic>>>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(_uid)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const SizedBox();
+                                  }
 
-                        final data = snapshot.data!.data() ?? {};
-                        final activeDays =
-                            (data['activeDays'] as Map?)?.cast<String, dynamic>() ?? {};
+                                  final data = snapshot.data!.data() ?? {};
+                                  final activeDays = (data['activeDays'] as Map?)
+                                          ?.cast<String, dynamic>() ??
+                                      {};
 
-                        bool isActive(String key) => activeDays[key] == true;
+                                  bool isActive(String key) =>
+                                      activeDays[key] == true;
 
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildDayBubble('Mon', isCompleted: isActive('mon')),
-                            _buildDayBubble('Tue', isCompleted: isActive('tue')),
-                            _buildDayBubble('Wed', isCompleted: isActive('wed')),
-                            _buildDayBubble('Thu', isCompleted: isActive('thu')),
-                            _buildDayBubble('Fri', isCompleted: isActive('fri')),
-                            _buildDayBubble('Sat', isCompleted: isActive('sat')),
-                            _buildDayBubble('Sun', isCompleted: isActive('sun')),
-                          ],
-                        );
-  },
-),
-
-                    ],
+                                  return Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildDayBubble('Mon',
+                                          isCompleted: isActive('mon')),
+                                      _buildDayBubble('Tue',
+                                          isCompleted: isActive('tue')),
+                                      _buildDayBubble('Wed',
+                                          isCompleted: isActive('wed')),
+                                      _buildDayBubble('Thu',
+                                          isCompleted: isActive('thu')),
+                                      _buildDayBubble('Fri',
+                                          isCompleted: isActive('fri')),
+                                      _buildDayBubble('Sat',
+                                          isCompleted: isActive('sat')),
+                                      _buildDayBubble('Sun',
+                                          isCompleted: isActive('sun')),
+                                    ],
+                                  );
+                                },
+                              ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -386,8 +429,6 @@ Widget _buildAppDrawer(BuildContext context) {
     ),
   );
 }
-
-// ---------------------------------------------------------
 
 // Small helper widget for the day bubbles
 Widget _buildDayBubble(String label, {bool isCompleted = false}) {
