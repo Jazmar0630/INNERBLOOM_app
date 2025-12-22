@@ -1,6 +1,7 @@
 // lib/pages/signup_page.dart
 import 'package:flutter/material.dart';
 import 'login_page.dart';
+import '../../services/auth_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -139,13 +140,31 @@ class _SignUpPageState extends State<SignUpPage> {
 
                   // Sign Up Button
                   ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // TODO: perform your signup logic here
-                        // Go BACK to the Welcome page that pushed this screen.
-                        Navigator.pop(context);
-                      }
-                    },
+              onPressed: () async {
+              if (!_formKey.currentState!.validate()) return;
+
+              if (!agreeToPolicy) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please agree to privacy policy")),
+                );
+                return;
+              }
+
+              final result = await AuthService.signup(
+                username: _username.text.trim(),
+                email: _email.text.trim(),
+                password: _password.text.trim(),
+              );
+
+              if (result["status"] == "success") {
+                Navigator.pop(context); // go back to login
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(result["error"] ?? "Signup failed")),
+                );
+              }
+            },
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3C5C5A),
                       padding: const EdgeInsets.symmetric(vertical: 16),

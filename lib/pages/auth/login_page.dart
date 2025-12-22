@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 import '../home/home_page.dart';
+import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -102,14 +103,26 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Log in button
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HomePage(),
-                        ),
-                      );
-                    },
+                    onPressed: () async {
+                            if (!_formKey.currentState!.validate()) return;
+
+                            final result = await AuthService.login(
+                              email: _email.text.trim(),
+                              password: _password.text.trim(),
+                            );
+
+                            if (result["status"] == "success") {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => const HomePage()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(result["error"] ?? "Login failed")),
+                              );
+                            }
+                          },
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3C5C5A),
                       padding: const EdgeInsets.symmetric(vertical: 16),
