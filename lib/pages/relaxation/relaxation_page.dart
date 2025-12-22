@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
@@ -9,7 +9,9 @@ import 'dart:io'; // for exit(0)
 import '../../services/relaxation_service.dart';
 
 class RelaxationPage extends StatefulWidget {
-  const RelaxationPage({super.key});
+  const RelaxationPage({super.key, this.initialCategory});
+  
+  final String? initialCategory;
 
   @override
   State<RelaxationPage> createState() => _RelaxationPageState();
@@ -32,6 +34,9 @@ class _RelaxationPageState extends State<RelaxationPage>
   int _selectedItemIndex = 0;
   double _dragOffset = 0;
 
+  // ⭐ ScrollController for category list
+  final ScrollController _categoryScrollController = ScrollController();
+
   final List<String> _categories = const [
     'All',
     'Anxiety reliefs',
@@ -41,38 +46,148 @@ class _RelaxationPageState extends State<RelaxationPage>
     'Self-love & confidence',
   ];
 
-  final List<_RelaxItem> _items = const [
+  // ⭐ EXPANDED VIDEO LIST - Add more videos here and assign categories
+  // ⭐ CHANGE THE CATEGORY VALUES to match your content
+  final List<_RelaxItem> _allItems = const [
+    // Anxiety reliefs videos
     _RelaxItem(
       title: 'Ocean waves',
       subtitle: 'Gentle rolling ocean and wave sounds',
       icon: Icons.waves,
-      videoId: 'dQw4w9WgXcQ',
+      videoId: 'cB_CwY9dhrA',
+      category: 'Anxiety reliefs', // ⭐ CHANGE THIS to assign category
+    ),
+    _RelaxItem(
+      title: 'Deep Breathing Exercise',
+      subtitle: 'Calm your anxiety with guided breathing',
+      icon: Icons.air,
+      videoId: '9bZkp7q19f0',
+      category: 'Anxiety reliefs', // ⭐ CHANGE THIS to assign category
+    ),
+    _RelaxItem(
+      title: 'Peaceful Garden Sounds',
+      subtitle: 'Birds chirping in a serene garden',
+      icon: Icons.park,
+      videoId: '3JZ_D3ELwOQ',
+      category: 'Anxiety reliefs', // ⭐ CHANGE THIS to assign category
+    ),
+
+    // Overthinking detox videos
+    _RelaxItem(
+      title: 'The Mindful Kind',
+      subtitle: 'Gentle steps to ease your mind',
+      icon: Icons.headphones,
+      videoId: '3JZ_D3ELwOQ',
+      category: 'Overthinking detox', // ⭐ CHANGE THIS to assign category
     ),
     _RelaxItem(
       title: 'Peaceful Piano & Rain',
       subtitle: 'Lo-fi piano with soft background rain',
       icon: Icons.piano,
       videoId: '9bZkp7q19f0',
+      category: 'Overthinking detox', // ⭐ CHANGE THIS to assign category
     ),
     _RelaxItem(
-      title: 'The Mindful Kind',
-      subtitle: 'Gentle steps to ease your mind',
-      icon: Icons.headphones,
-      videoId: '3JZ_D3ELwOQ',
+      title: 'Mind Clarity Meditation',
+      subtitle: 'Clear your thoughts and find peace',
+      icon: Icons.spa,
+      videoId: 'dQw4w9WgXcQ',
+      category: 'Overthinking detox', // ⭐ CHANGE THIS to assign category
     ),
+
+    // Motivation & energy videos
+    _RelaxItem(
+      title: 'Morning Energy Boost',
+      subtitle: 'Uplifting music to start your day',
+      icon: Icons.wb_sunny,
+      videoId: '9bZkp7q19f0',
+      category: 'Motivation & energy', // ⭐ CHANGE THIS to assign category
+    ),
+    _RelaxItem(
+      title: 'Power Through Your Day',
+      subtitle: 'Motivational speech and energetic beats',
+      icon: Icons.bolt,
+      videoId: '3JZ_D3ELwOQ',
+      category: 'Motivation & energy', // ⭐ CHANGE THIS to assign category
+    ),
+    _RelaxItem(
+      title: 'Workout Motivation Mix',
+      subtitle: 'High-energy tracks to keep you moving',
+      icon: Icons.fitness_center,
+      videoId: 'dQw4w9WgXcQ',
+      category: 'Motivation & energy', // ⭐ CHANGE THIS to assign category
+    ),
+
+    // Stress & burnout videos
     _RelaxItem(
       title: 'Forest Birds & Wind',
       subtitle: 'Soft wind and forest ambience',
-      icon: Icons.park,
+      icon: Icons.forest,
       videoId: 'dQw4w9WgXcQ',
+      category: 'Stress & burnout', // ⭐ CHANGE THIS to assign category
+    ),
+    _RelaxItem(
+      title: 'Stress Relief Meditation',
+      subtitle: 'Release tension and restore balance',
+      icon: Icons.self_improvement,
+      videoId: '9bZkp7q19f0',
+      category: 'Stress & burnout', // ⭐ CHANGE THIS to assign category
+    ),
+    _RelaxItem(
+      title: 'Calm Piano for Work',
+      subtitle: 'Gentle melodies to reduce workplace stress',
+      icon: Icons.piano_outlined,
+      videoId: '3JZ_D3ELwOQ',
+      category: 'Stress & burnout', // ⭐ CHANGE THIS to assign category
+    ),
+
+    // Self-love & confidence videos
+    _RelaxItem(
+      title: 'Positive Affirmations',
+      subtitle: 'Build confidence with daily affirmations',
+      icon: Icons.favorite,
+      videoId: 'dQw4w9WgXcQ',
+      category: 'Self-love & confidence', // ⭐ CHANGE THIS to assign category
     ),
     _RelaxItem(
       title: 'Surah Ar-Rahman',
       subtitle: 'Recitation by Mishary Al Afasy',
       icon: Icons.menu_book,
       videoId: 'dQw4w9WgXcQ',
+      category: 'Self-love & confidence', // ⭐ CHANGE THIS to assign category
     ),
+    _RelaxItem(
+      title: 'Self-Care Meditation',
+      subtitle: 'Love yourself and embrace inner peace',
+      icon: Icons.spa_outlined,
+      videoId: '9bZkp7q19f0',
+      category: 'Self-love & confidence', // ⭐ CHANGE THIS to assign category
+    ),
+
+    // Add more videos below as needed
+    // ⭐ COPY THIS TEMPLATE to add new videos:
+    /*
+    _RelaxItem(
+      title: 'Your Video Title',
+      subtitle: 'Your video description',
+      icon: Icons.your_icon_here,
+      videoId: 'YouTubeVideoID',
+      category: 'Category Name', // Must match one of the categories above
+    ),
+    */
   ];
+
+  // ⭐ FILTER FUNCTION - Returns filtered list based on selected category
+  List<_RelaxItem> get _filteredItems {
+    if (_selectedCategory == 0) {
+      // "All" category - show everything
+      return _allItems;
+    } else {
+      // Filter by selected category
+      final categoryName = _categories[_selectedCategory];
+      return _allItems.where((item) => item.category == categoryName).toList();
+    }
+  }
 
   @override
   void initState() {
@@ -83,9 +198,50 @@ class _RelaxationPageState extends State<RelaxationPage>
     );
     _overlayOffset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
         .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
+    
+    // ⭐ Set initial category if provided from HomePage
+    if (widget.initialCategory != null) {
+      final index = _categories.indexOf(widget.initialCategory!);
+      if (index != -1) {
+        _selectedCategory = index;
+      }
+    }
   }
 
-  // ✅ NEW: PUT YOUR FUNCTION HERE (inside State class)
+  // ⭐ Scroll to selected category chip
+  void _scrollToCategory(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_categoryScrollController.hasClients) {
+        // For first two items, scroll to start
+        if (index <= 1) {
+          _categoryScrollController.animateTo(
+            0.0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return;
+        }
+        
+        // Calculate approximate position to scroll to
+        final itemWidth = 150.0; // approximate width of each chip
+        final spacing = 8.0;
+        final targetPosition = ((itemWidth + spacing) * (index - 1));
+        
+        // Get the max scroll extent
+        final maxScroll = _categoryScrollController.position.maxScrollExtent;
+        
+        // Calculate position, keeping some items visible
+        final scrollTo = targetPosition > maxScroll ? maxScroll : targetPosition;
+        
+        _categoryScrollController.animateTo(
+          scrollTo,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   Future<void> _callRelaxationApi() async {
     setState(() {
       _isLoadingRelaxation = true;
@@ -135,11 +291,17 @@ class _RelaxationPageState extends State<RelaxationPage>
     _overlayYoutubeController?.dispose();
 
     _selectedItemIndex = index;
+    
+    // ⭐ IMPROVED: Better loading flags for faster playback
     _overlayYoutubeController = YoutubePlayerController(
       initialVideoId: videoId,
       flags: const YoutubePlayerFlags(
         autoPlay: true,
         mute: false,
+        enableCaption: false,
+        forceHD: true, 
+        disableDragSeek: false,
+        loop: false,
       ),
     );
 
@@ -147,6 +309,9 @@ class _RelaxationPageState extends State<RelaxationPage>
       _isOverlayVisible = true;
     });
     _overlayController.forward();
+    
+    // ⭐ DEBUG: Print video ID to console
+    print('🎬 Attempting to play video: $videoId');
   }
 
   void _hideOverlay() {
@@ -194,6 +359,7 @@ class _RelaxationPageState extends State<RelaxationPage>
   void dispose() {
     _overlayYoutubeController?.dispose();
     _overlayController.dispose();
+    _categoryScrollController.dispose(); // ⭐ Dispose scroll controller
     super.dispose();
   }
 
@@ -256,55 +422,85 @@ class _RelaxationPageState extends State<RelaxationPage>
                     const Text('Categories', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                     const SizedBox(height: 10),
 
-                    // category chips
+                    // category chips - Now with proper draggable configuration
                     SizedBox(
                       height: 40,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _categories.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, idx) {
-                          final isSelected = idx == _selectedCategory;
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedCategory = idx),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : Colors.white.withOpacity(0.16),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                _categories[idx],
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                  color: isSelected ? const Color(0xFF3C5C5A) : Colors.white,
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          // Allow scroll notifications to propagate
+                          return false;
+                        },
+                        child: ListView.separated(
+                          controller: _categoryScrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: const AlwaysScrollableScrollPhysics(), // ⭐ Force scrollable even with few items
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          itemCount: _categories.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, idx) {
+                            final isSelected = idx == _selectedCategory;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() => _selectedCategory = idx);
+                                _scrollToCategory(idx);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? Colors.white : Colors.white.withOpacity(0.16),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _categories[idx],
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                      color: isSelected ? const Color(0xFF3C5C5A) : Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 22),
-                    const Text('Listen or Watch:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Listen or Watch:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                        Text(
+                          '${_filteredItems.length} videos',
+                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
 
-                    // Cards list
+                    // ⭐ CARDS LIST - Now uses _filteredItems instead of _items
                     Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        itemCount: _items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final item = _items[index];
-                          return _RelaxCard(
-                            item: item,
-                            onPlay: () => _playVideo(index, item.videoId),
-                          );
-                        },
-                      ),
+                      child: _filteredItems.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No videos in this category',
+                                style: TextStyle(color: Colors.white70, fontSize: 14),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              itemCount: _filteredItems.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final item = _filteredItems[index];
+                                return _RelaxCard(
+                                  item: item,
+                                  onPlay: () => _playVideo(index, item.videoId),
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -333,6 +529,8 @@ class _RelaxationPageState extends State<RelaxationPage>
   }
 
   Widget _buildOverlay() {
+    final currentItem = _filteredItems[_selectedItemIndex];
+    
     return Positioned(
       left: 0,
       right: 0,
@@ -401,10 +599,16 @@ class _RelaxationPageState extends State<RelaxationPage>
                                 ),
                                 height: 240,
                                 child: _overlayYoutubeController != null
-                                    ? YoutubePlayer(
-                                        controller: _overlayYoutubeController!,
-                                        showVideoProgressIndicator: true,
-                                      )
+                                   ? YoutubePlayerBuilder(
+                                    player: YoutubePlayer(
+                                      controller: _overlayYoutubeController!,
+                                      showVideoProgressIndicator: true,
+                                      ),
+                                      builder: (context, player) {
+                                        return player;
+                                        },
+                                        )
+
                                     : const Center(
                                         child: CircularProgressIndicator(),
                                       ),
@@ -414,7 +618,7 @@ class _RelaxationPageState extends State<RelaxationPage>
 
                           const SizedBox(height: 20),
 
-                          // ✅ NEW: Button to call API + show result
+                          // Button to call API + show result
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
@@ -461,7 +665,7 @@ class _RelaxationPageState extends State<RelaxationPage>
 
                           const SizedBox(height: 24),
 
-                          // existing title/subtitle and controls...
+                          // title/subtitle
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
@@ -473,7 +677,7 @@ class _RelaxationPageState extends State<RelaxationPage>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        _items[_selectedItemIndex].title,
+                                        currentItem.title,
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w700,
@@ -482,7 +686,7 @@ class _RelaxationPageState extends State<RelaxationPage>
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        _items[_selectedItemIndex].subtitle,
+                                        currentItem.subtitle,
                                         style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w400,
@@ -557,17 +761,20 @@ Widget _buildAppDrawer(BuildContext context) {
   );
 }
 
+// ⭐ UPDATED _RelaxItem CLASS - Now includes category field
 class _RelaxItem {
   final String title;
   final String subtitle;
   final IconData icon;
   final String videoId;
+  final String category; // ⭐ NEW: Category field for filtering
 
   const _RelaxItem({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.videoId,
+    required this.category, // ⭐ Must be provided when creating items
   });
 }
 
