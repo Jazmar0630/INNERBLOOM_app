@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io'; // for exit(0)
 
 class UserPage extends StatefulWidget {
@@ -14,7 +16,30 @@ class UserPage extends StatefulWidget {
 
 class _UserPageState extends State<UserPage> {
   int _navIndex = 3; // we are on the User tab
+  late String _uid;
 
+  @override
+  void initState() {
+    super.initState();
+    _uid = FirebaseAuth.instance.currentUser!.uid;
+  }
+
+String _weekdayKey(DateTime dt) {
+  const keys = ['mon','tue','wed','thu','fri','sat','sun'];
+  return keys[dt.weekday - 1];
+}
+
+Future<void> _markTodayActive() async {
+  final today = _weekdayKey(DateTime.now());
+
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(_uid)
+      .set({
+        'activeDays.$today': true,
+        'lastActiveAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+}
   void _onNavTap(int index) {
     if (index == _navIndex) return;
 
@@ -148,18 +173,35 @@ class _UserPageState extends State<UserPage> {
                       const SizedBox(height: 16),
 
                       // Row of days
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildDayBubble('Mon', isCompleted: true),
-                          _buildDayBubble('Tue'),
-                          _buildDayBubble('Wed'),
-                          _buildDayBubble('Thur'),
-                          _buildDayBubble('Fri'),
-                          _buildDayBubble('Sat'),
-                          _buildDayBubble('Sun'),
-                        ],
-                      ),
+                      StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(_uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox();
+
+                        final data = snapshot.data!.data() ?? {};
+                        final activeDays =
+                            (data['activeDays'] as Map?)?.cast<String, dynamic>() ?? {};
+
+                        bool isActive(String key) => activeDays[key] == true;
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildDayBubble('Mon', isCompleted: isActive('mon')),
+                            _buildDayBubble('Tue', isCompleted: isActive('tue')),
+                            _buildDayBubble('Wed', isCompleted: isActive('wed')),
+                            _buildDayBubble('Thu', isCompleted: isActive('thu')),
+                            _buildDayBubble('Fri', isCompleted: isActive('fri')),
+                            _buildDayBubble('Sat', isCompleted: isActive('sat')),
+                            _buildDayBubble('Sun', isCompleted: isActive('sun')),
+                          ],
+                        );
+  },
+),
+
                     ],
                   ),
                 ),
