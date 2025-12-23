@@ -262,13 +262,14 @@ class _RelaxationPageState extends State<RelaxationPage>
     }
   }
 
-  // ✅ FIXED: take item instead of index
   void _playVideo(_RelaxItem item) {
-    _overlayYoutubeController?.close();
-    _overlayYoutubeController = null;
+  // Close old controller safely
+  _overlayYoutubeController?.close();
+  _overlayYoutubeController = null;
 
-    _selectedItem = item;
+  _selectedItem = item;
 
+  // Create new controller
   final controller = YoutubePlayerController.fromVideoId(
     videoId: item.videoId,
     autoPlay: true,
@@ -282,16 +283,15 @@ class _RelaxationPageState extends State<RelaxationPage>
     ),
   );
 
-    setState(() {
-      _isOverlayVisible = true;
-      _relaxationText = '';
-      _isLoadingRelaxation = false;
-    });
+  setState(() {
+    _overlayYoutubeController = controller;
+    _isOverlayVisible = true;
+    _relaxationText = '';
+    _isLoadingRelaxation = false;
+  });
 
-    _overlayController.forward();
-    // ignore: avoid_print
-    print('🎬 Attempting to play video: ${item.videoId}');
-  }
+  _overlayController.forward();
+}
 
   void _hideOverlay() {
     _overlayController.reverse().then((_) {
