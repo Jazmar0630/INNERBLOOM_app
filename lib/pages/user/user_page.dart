@@ -33,6 +33,9 @@ class _UserPageState extends State<UserPage> {
     });
   }
 
+  // ---------------------------
+  // Daily check-in logic
+  // ---------------------------
   String _weekdayKey(DateTime dt) {
     const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     return keys[dt.weekday - 1];
@@ -49,6 +52,24 @@ class _UserPageState extends State<UserPage> {
     }, SetOptions(merge: true));
   }
 
+  // ---------------------------
+  // Mood chart stream (last 7 moods)
+  // ---------------------------
+  Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
+    if (_uid == null) return const Stream.empty();
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(_uid)
+        .collection('moods')
+        .orderBy('createdAt', descending: false)
+        .limit(7)
+        .snapshots();
+  }
+
+  // ---------------------------
+  // Bottom nav
+  // ---------------------------
   void _onNavTap(int index) {
     if (index == _navIndex) return;
 
@@ -86,10 +107,10 @@ class _UserPageState extends State<UserPage> {
     return Scaffold(
       extendBody: true,
 
-      // ✅ ADD DRAWER HERE
+      // ✅ Drawer
       drawer: _buildAppDrawer(context),
 
-      // gradient background
+      // Gradient background
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -107,11 +128,10 @@ class _UserPageState extends State<UserPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top bar with drawer icon
+                // Top bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // ✅ DRAWER ICON THAT OPENS MENU
                     Builder(
                       builder: (context) => IconButton(
                         icon: const Icon(Icons.menu, color: Colors.white),
@@ -123,7 +143,7 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 8),
 
-                // USER AVATAR + NAME ("user")
+                // Avatar + name
                 Center(
                   child: Column(
                     children: [
@@ -151,7 +171,7 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 24),
 
-                // ✅ DAILY CHECK-IN CARD (CLICKABLE)
+                // ✅ DAILY CHECK-IN CARD (click to check-in)
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () async {
@@ -197,7 +217,6 @@ class _UserPageState extends State<UserPage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Row of days
                         _uid == null
                             ? const Text(
                                 'Please login first',
@@ -215,9 +234,10 @@ class _UserPageState extends State<UserPage> {
                                   }
 
                                   final data = snapshot.data!.data() ?? {};
-                                  final activeDays = (data['activeDays'] as Map?)
-                                          ?.cast<String, dynamic>() ??
-                                      {};
+                                  final activeDays =
+                                      (data['activeDays'] as Map?)
+                                              ?.cast<String, dynamic>() ??
+                                          {};
 
                                   bool isActive(String key) =>
                                       activeDays[key] == true;
@@ -283,8 +303,8 @@ class _UserPageState extends State<UserPage> {
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(color: Colors.black26),
                               ),
-                              child: Row(
-                                children: const [
+                              child: const Row(
+                                children: [
                                   Icon(Icons.calendar_today,
                                       size: 14, color: Colors.black54),
                                   SizedBox(width: 6),
@@ -305,7 +325,7 @@ class _UserPageState extends State<UserPage> {
 
                         const SizedBox(height: 16),
 
-                        // Y-axis labels + chart placeholder
+                        // Y-axis labels + mood chart
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -328,12 +348,63 @@ class _UserPageState extends State<UserPage> {
                                   color: Colors.grey[100],
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: const Center(
-                                  child: Text(
-                                    'Mood chart placeholder',
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.black38),
-                                  ),
+                                child: StreamBuilder<
+                                    QuerySnapshot<Map<String, dynamic>>>(
+                                  stream: _moodStream(),
+                                  builder: (context, snapshot) {
+                                    if (_uid == null) {
+                                      return const Center(
+                                        child: Text(
+                                          'Please login first',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black38),
+                                        ),
+                                      );
+                                    }
+
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    }
+
+                                    if (!snapshot.hasData ||
+                                        snapshot.data!.docs.isEmpty) {
+                                      return const Center(
+                                        child: Text(
+                                          'No mood data yet',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black38),
+                                        ),
+                                      );
+                                    }
+
+                                    final moods = snapshot.data!.docs
+                                        .map((d) =>
+                                            (d.data()['mood'] ?? 0) as int)
+                                        .toList();
+
+                                    return Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: moods.map((mood) {
+                                        final safeMood = mood.clamp(0, 5);
+                                        return Container(
+                                          width: 14,
+                                          height: safeMood * 30.0,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF25424F),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    );
+                                  },
                                 ),
                               ),
                             ),
@@ -349,7 +420,7 @@ class _UserPageState extends State<UserPage> {
         ),
       ),
 
-      // BOTTOM NAVIGATION BAR
+      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -380,7 +451,7 @@ class _UserPageState extends State<UserPage> {
 }
 
 // ---------------------------------------------------------
-// ✅ DRAWER WIDGET (same as HomePage drawer)
+// Drawer widget
 // ---------------------------------------------------------
 Widget _buildAppDrawer(BuildContext context) {
   return Drawer(
@@ -398,7 +469,6 @@ Widget _buildAppDrawer(BuildContext context) {
             ),
           ),
         ),
-
         ListTile(
           leading: const Icon(Icons.settings),
           title: const Text('Settings'),
@@ -414,15 +484,10 @@ Widget _buildAppDrawer(BuildContext context) {
           title: const Text('Privacy Policy'),
           onTap: () {},
         ),
-
         const Divider(),
-
         ListTile(
           leading: const Icon(Icons.exit_to_app, color: Colors.red),
-          title: const Text(
-            'Exit App',
-            style: TextStyle(color: Colors.red),
-          ),
+          title: const Text('Exit App', style: TextStyle(color: Colors.red)),
           onTap: () => exit(0),
         ),
       ],
@@ -430,7 +495,7 @@ Widget _buildAppDrawer(BuildContext context) {
   );
 }
 
-// Small helper widget for the day bubbles
+// Day bubble widget
 Widget _buildDayBubble(String label, {bool isCompleted = false}) {
   return Column(
     mainAxisSize: MainAxisSize.min,
