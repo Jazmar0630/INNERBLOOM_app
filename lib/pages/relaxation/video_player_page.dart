@@ -164,7 +164,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             inactiveTrackColor: Colors.white.withOpacity(0.3),
                           ),
                           child: Slider(
-                            value: sliderValue,
+                            value: _posSec,
                             min: 0,
                             max: _durSec,
                             onChanged: !_isReady

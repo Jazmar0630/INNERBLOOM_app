@@ -558,7 +558,7 @@ class _MoodResultPageState extends State<MoodResultPage>
                             child: Column(
                               children: [
                                 Slider(
-                                  value: sliderValue,
+                                  value: _posSec,
                                   min: 0,
                                   max: _durSec,
                                   onChanged: !_isPlayerReady

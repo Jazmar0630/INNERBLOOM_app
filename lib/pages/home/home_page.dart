@@ -428,6 +428,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
                           const SizedBox(height: 16),
 
+                          // ✅ TITLE + ICON (THIS IS THE FIX)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: SizedBox(
@@ -435,11 +436,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    _currentTitle,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(_currentIcon, size: 20, color: const Color(0xFF3C5C5A)),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          _currentTitle,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
