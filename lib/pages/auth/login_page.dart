@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 import '../home/home_page.dart';
-import '../../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,11 +16,53 @@ class _LoginPageState extends State<LoginPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
+  bool _loading = false;
+
   @override
   void dispose() {
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _email.text.trim(),
+        password: _password.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Login failed';
+
+      if (e.code == 'user-not-found') msg = 'No user found with this email';
+      if (e.code == 'wrong-password') msg = 'Wrong password';
+      if (e.code == 'invalid-email') msg = 'Invalid email';
+      if (e.code == 'network-request-failed') msg = 'No internet connection';
+      if (e.code == 'operation-not-allowed') {
+        msg = 'Email/Password sign-in is not enabled in Firebase Console';
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login failed')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -103,26 +145,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Log in button
                   ElevatedButton(
-                    onPressed: () async {
-                            if (!_formKey.currentState!.validate()) return;
-
-                            final result = await AuthService.login(
-                              email: _email.text.trim(),
-                              password: _password.text.trim(),
-                            );
-
-                            if (result["status"] == "success") {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (_) => const HomePage()),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(result["error"] ?? "Login failed")),
-                              );
-                            }
-                          },
-
+                    onPressed: _loading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3C5C5A),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -130,10 +153,17 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text(
-                      'LOG IN',
-                      style: TextStyle(color: Colors.white, letterSpacing: 1),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            'LOG IN',
+                            style:
+                                TextStyle(color: Colors.white, letterSpacing: 1),
+                          ),
                   ),
                   const SizedBox(height: 20),
 
@@ -151,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Social + "Sign up" link (beside Apple icon)
+                  // Social + "Sign up"
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -165,8 +195,7 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                                builder: (_) => const SignUpPage()),
+                            MaterialPageRoute(builder: (_) => const SignUpPage()),
                           );
                         },
                         child: const Text(
