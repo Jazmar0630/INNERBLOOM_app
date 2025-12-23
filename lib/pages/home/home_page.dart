@@ -1,9 +1,11 @@
+import 'dart:async';
+import 'dart:io'; // for exit(0) (note: not supported on Flutter Web)
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import '../relaxation/relaxation_page.dart';
-import 'dart:io'; // for exit(0)
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.displayName = 'User!'});
@@ -15,14 +17,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   int _navIndex = 0;
-  
+
   // Overlay animation controller
   late AnimationController _overlayController;
   late Animation<Offset> _overlayOffset;
   bool _isOverlayVisible = false;
+
+  // ✅ youtube_player_iframe controller
   YoutubePlayerController? _overlayYoutubeController;
+
+  // Track playback for slider + button states
+  Timer? _ticker;
+  bool _isPlayerReady = false;
+  bool _isPlaying = false;
+  double _posSec = 0;
+  double _durSec = 1;
+
   double _dragOffset = 0;
-  
+
   // Current playing content info
   String _currentTitle = '';
   String _currentSubtitle = '';
@@ -35,76 +47,117 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _overlayOffset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
+    _overlayOffset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _overlayController, curve: Curves.easeOut),
+    );
   }
 
   @override
   void dispose() {
-    _overlayYoutubeController?.dispose();
+    _ticker?.cancel();
+    _overlayYoutubeController?.close();
     _overlayController.dispose();
     super.dispose();
   }
 
-  // Video overlay controls
+  // ---------------------------------------------------------
+  // Video overlay controls (youtube_player_iframe)
+  // ---------------------------------------------------------
   void _playVideo(String title, String subtitle, IconData icon, String videoId) {
-    _overlayYoutubeController?.pause();
-    _overlayYoutubeController?.dispose();
+    _ticker?.cancel();
+    _overlayYoutubeController?.close();
+    _overlayYoutubeController = null;
 
     _currentTitle = title;
     _currentSubtitle = subtitle;
     _currentIcon = icon;
 
-    _overlayYoutubeController = YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
+    final controller = YoutubePlayerController.fromVideoId(
+      videoId: videoId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        strictRelatedVideos: true,
+        playsInline: true,
+        enableJavaScript: true,
         mute: false,
       ),
     );
 
+    // Listen player state (play/pause)
+    controller.listen((value) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = value.playerState == PlayerState.playing;
+      });
+    });
+
     setState(() {
+      _overlayYoutubeController = controller;
       _isOverlayVisible = true;
+      _isPlayerReady = false;
+      _posSec = 0;
+      _durSec = 1;
     });
 
     _overlayController.forward();
+
+    // Poll time/duration (safe for web iframe)
+    _ticker = Timer.periodic(const Duration(milliseconds: 300), (_) async {
+      if (!mounted) return;
+      try {
+        final pos = await controller.currentTime;
+        final dur = await controller.duration;
+
+        setState(() {
+          _posSec = (pos ?? 0).toDouble();
+          _durSec = ((dur ?? 1).toDouble()).clamp(1, double.infinity);
+          _isPlayerReady = true;
+        });
+      } catch (_) {
+        // ignore temporary iframe timing issues
+      }
+    });
   }
 
   void _hideOverlay() {
     _overlayController.reverse().then((_) {
+      if (!mounted) return;
       setState(() {
         _isOverlayVisible = false;
         _dragOffset = 0;
       });
-      _overlayYoutubeController?.pause();
-      _overlayYoutubeController?.dispose();
+
+      _ticker?.cancel();
+      _ticker = null;
+
+      _overlayYoutubeController?.pauseVideo();
+      _overlayYoutubeController?.close();
       _overlayYoutubeController = null;
     });
   }
 
   void _toggleOverlayPlayPause() {
-    final c = _overlayYoutubeController;
-    if (c == null) return;
-    if (c.value.isPlaying) {
-      c.pause();
+    if (!_isPlayerReady || _overlayYoutubeController == null) return;
+    if (_isPlaying) {
+      _overlayYoutubeController!.pauseVideo();
     } else {
-      c.play();
+      _overlayYoutubeController!.playVideo();
     }
-    setState(() {});
   }
 
-  void _seekOverlayRelative(Duration offset) {
-    final c = _overlayYoutubeController;
-    if (c == null) return;
-    final pos = c.value.position;
-    c.seekTo(pos + offset);
+  void _seekOverlayRelative(int seconds) {
+    if (!_isPlayerReady || _overlayYoutubeController == null) return;
+    final next = (_posSec + seconds).clamp(0, _durSec);
+    _overlayYoutubeController!.seekTo(seconds: next.toDouble(), allowSeekAhead: true);
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
+  String _formatSeconds(double sec) {
+    final s = sec.isFinite ? sec.round() : 0;
+    final m = (s ~/ 60).toString().padLeft(2, '0');
+    final r = (s % 60).toString().padLeft(2, '0');
+    return '$m:$r';
   }
 
   @override
@@ -135,22 +188,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         selectedItemColor: const Color(0xFF25424F),
         unselectedItemColor: Colors.grey[500],
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.psychology_alt_outlined),
-            label: 'Mood',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.self_improvement),
-            label: 'Relaxation',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'User',
-          )
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.psychology_alt_outlined), label: 'Mood'),
+          BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Relaxation'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
         ],
       ),
       body: Stack(
@@ -175,7 +216,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           children: [
-            // Top bar with menu + avatar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -187,15 +227,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 ),
                 const CircleAvatar(
                   radius: 18,
-                  backgroundImage:
-                      AssetImage('assets/avatar_placeholder.png'),
+                  backgroundImage: AssetImage('assets/avatar_placeholder.png'),
                 ),
               ],
             ),
-
             const SizedBox(height: 8),
-
-            // Greeting
             Text(
               'Hi, ${widget.displayName}',
               style: const TextStyle(
@@ -207,16 +243,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             const SizedBox(height: 6),
             const Text(
               'How do you feel today?',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-                height: 1.2,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white70, height: 1.2),
             ),
-
             const SizedBox(height: 16),
 
-            // Mood chips - Now clickable to navigate to RelaxationPage
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -226,9 +256,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const RelaxationPage(
-                          initialCategory: 'Anxiety reliefs',
-                        ),
+                        builder: (_) => const RelaxationPage(initialCategory: 'Anxiety reliefs'),
                       ),
                     );
                   },
@@ -239,9 +267,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const RelaxationPage(
-                          initialCategory: 'Overthinking detox',
-                        ),
+                        builder: (_) => const RelaxationPage(initialCategory: 'Overthinking detox'),
                       ),
                     );
                   },
@@ -252,9 +278,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const RelaxationPage(
-                          initialCategory: 'Self-love & confidence',
-                        ),
+                        builder: (_) => const RelaxationPage(initialCategory: 'Self-love & confidence'),
                       ),
                     );
                   },
@@ -265,9 +289,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const RelaxationPage(
-                          initialCategory: 'Stress & burnout',
-                        ),
+                        builder: (_) => const RelaxationPage(initialCategory: 'Stress & burnout'),
                       ),
                     );
                   },
@@ -276,11 +298,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
 
             const SizedBox(height: 20),
-
-            const Text(
-              'Not sure how do you feel today?',
-              style: TextStyle(color: Colors.white70),
-            ),
+            const Text('Not sure how do you feel today?', style: TextStyle(color: Colors.white70)),
             const SizedBox(height: 10),
 
             SizedBox(
@@ -289,18 +307,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 icon: const Icon(Icons.arrow_forward),
                 label: const Text("Let's figure it out"),
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   backgroundColor: Colors.white24,
                   foregroundColor: Colors.white,
                   elevation: 0,
                 ),
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const OnboardingIntroPage()),
+                    MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
                   );
                 },
               ),
@@ -310,8 +325,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
             _RecoCard(
               title: 'Bring your focus back',
-              subtitle:
-                  'Listen to our most relaxing songs and gain back your focus',
+              subtitle: 'Listen to our most relaxing songs and gain back your focus',
               buttonText: 'Listen now',
               illustration: Icons.self_improvement,
               onButtonPressed: () {
@@ -319,15 +333,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   'Bring your focus back',
                   'Listen to our most relaxing songs and gain back your focus',
                   Icons.self_improvement,
-                  '9bZkp7q19f0', // Peaceful Piano & Rain
+                  '9bZkp7q19f0',
                 );
               },
             ),
             const SizedBox(height: 14),
             _RecoCard(
               title: 'Quiet the overthinking',
-              subtitle:
-                  'Watch calming visuals and guided talks that help clear your busy mind',
+              subtitle: 'Watch calming visuals and guided talks that help clear your busy mind',
               buttonText: 'Watch now',
               illustration: Icons.weekend_outlined,
               onButtonPressed: () {
@@ -335,7 +348,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   'Quiet the overthinking',
                   'Watch calming visuals and guided talks that help clear your busy mind',
                   Icons.weekend_outlined,
-                  '3JZ_D3ELwOQ', // Mindful meditation
+                  '3JZ_D3ELwOQ',
                 );
               },
             ),
@@ -346,11 +359,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildOverlay() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
+    final controller = _overlayYoutubeController;
+    final double sliderValue = _posSec.clamp(0.0, _durSec).toDouble();
+
+    return Positioned.fill(
       child: GestureDetector(
         onTap: _hideOverlay,
         child: Container(
@@ -361,18 +373,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               position: _overlayOffset,
               child: GestureDetector(
                 onTap: () {},
-                onVerticalDragUpdate: (details) {
-                  setState(() {
-                    _dragOffset += details.delta.dy;
-                  });
-                },
-                onVerticalDragEnd: (details) {
+                onVerticalDragUpdate: (details) => setState(() => _dragOffset += details.delta.dy),
+                onVerticalDragEnd: (_) {
                   if (_dragOffset > 100) {
                     _hideOverlay();
                   } else {
-                    setState(() {
-                      _dragOffset = 0;
-                    });
+                    setState(() => _dragOffset = 0);
                   }
                 },
                 child: Transform.translate(
@@ -400,33 +406,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           ),
                           const SizedBox(height: 18),
 
-                          // Video player
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
+                                height: 240,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFF3C5C5A),
-                                    width: 2,
-                                  ),
+                                  border: Border.all(color: const Color(0xFF3C5C5A), width: 2),
                                 ),
-                                height: 240,
-                                child: _overlayYoutubeController != null
-                                    ? YoutubePlayer(
-                                        controller: _overlayYoutubeController!,
-                                        showVideoProgressIndicator: true,
-                                      )
-                                    : const Center(child: CircularProgressIndicator()),
+                                child: controller == null
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : YoutubePlayerScaffold(
+                                        controller: controller,
+                                        builder: (context, player) => player,
+                                      ),
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 16),
 
-                          // Title + subtitle
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: SizedBox(
@@ -438,21 +439,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     _currentTitle,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     _currentSubtitle,
                                     maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.black54,
-                                      height: 1.3,
-                                    ),
+                                    style: const TextStyle(fontSize: 13, color: Colors.black54, height: 1.3),
                                   ),
                                 ],
                               ),
@@ -461,31 +455,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
                           const SizedBox(height: 16),
 
-                          // Seek bar
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
                               children: [
                                 Slider(
-                                  value: _overlayYoutubeController?.value.position.inSeconds.toDouble() ?? 0,
-                                  max: _overlayYoutubeController?.metadata.duration.inSeconds.toDouble() ?? 1,
-                                  onChanged: (value) {
-                                    _overlayYoutubeController?.seekTo(Duration(seconds: value.toInt()));
-                                  },
+                                  value: sliderValue,
+                                  min: 0,
+                                  max: _durSec,
+                                  onChanged: !_isPlayerReady
+                                      ? null
+                                      : (value) {
+                                          setState(() => _posSec = value);
+                                          controller?.seekTo(seconds: value, allowSeekAhead: true);
+                                        },
                                 ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      _formatDuration(_overlayYoutubeController?.value.position ?? Duration.zero),
-                                      style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                    ),
-                                    Text(
-                                      _formatDuration(
-                                        Duration(seconds: _overlayYoutubeController?.metadata.duration.inSeconds ?? 0),
-                                      ),
-                                      style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                    ),
+                                    Text(_formatSeconds(_posSec),
+                                        style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                                    Text(_formatSeconds(_durSec),
+                                        style: const TextStyle(fontSize: 12, color: Colors.black54)),
                                   ],
                                 ),
                               ],
@@ -494,29 +485,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
                           const SizedBox(height: 18),
 
-                          // Controls
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               IconButton(
                                 iconSize: 40,
                                 icon: const Icon(Icons.replay_10, color: Color(0xFF7A9BA3)),
-                                onPressed: () => _seekOverlayRelative(const Duration(seconds: -10)),
+                                onPressed: !_isPlayerReady ? null : () => _seekOverlayRelative(-10),
                               ),
                               const SizedBox(width: 16),
                               Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF3C5C5A),
-                                ),
+                                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF3C5C5A)),
                                 child: IconButton(
                                   iconSize: 36,
-                                  icon: Icon(
-                                    _overlayYoutubeController?.value.isPlaying == true
-                                        ? Icons.pause
-                                        : Icons.play_arrow,
-                                    color: Colors.white,
-                                  ),
+                                  icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
                                   onPressed: _toggleOverlayPlayPause,
                                 ),
                               ),
@@ -524,7 +506,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               IconButton(
                                 iconSize: 40,
                                 icon: const Icon(Icons.forward_10, color: Color(0xFF7A9BA3)),
-                                onPressed: () => _seekOverlayRelative(const Duration(seconds: 10)),
+                                onPressed: !_isPlayerReady ? null : () => _seekOverlayRelative(10),
                               ),
                             ],
                           ),
@@ -555,39 +537,18 @@ Widget _buildAppDrawer(BuildContext context) {
           decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
           child: Text(
             'InnerBloom',
-            style: TextStyle(
-              fontSize: 22,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
-
-        ListTile(
-          leading: const Icon(Icons.settings),
-          title: const Text('Settings'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.help_outline),
-          title: const Text('Help & Support'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('Privacy Policy'),
-          onTap: () {},
-        ),
-
+        ListTile(leading: const Icon(Icons.settings), title: const Text('Settings'), onTap: () {}),
+        ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help & Support'), onTap: () {}),
+        ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: const Text('Privacy Policy'), onTap: () {}),
         const Divider(),
-
         ListTile(
           leading: const Icon(Icons.exit_to_app, color: Colors.red),
-          title: const Text(
-            'Exit App',
-            style: TextStyle(color: Colors.red),
-          ),
+          title: const Text('Exit App', style: TextStyle(color: Colors.red)),
           onTap: () {
+            // ⚠️ exit(0) not supported on Flutter Web (will do nothing / error)
             exit(0);
           },
         ),
@@ -625,8 +586,7 @@ class _MoodChip extends StatelessWidget {
             child: Icon(icon, color: Colors.white, size: 28),
           ),
           const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         ],
       ),
     );
@@ -672,13 +632,9 @@ class _RecoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                Text(subtitle,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.black54, height: 1.3)),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.3)),
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -687,11 +643,9 @@ class _RecoCard extends StatelessWidget {
                     icon: const Icon(Icons.play_arrow),
                     label: Text(buttonText),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       backgroundColor: Colors.black.withOpacity(0.06),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       foregroundColor: Colors.black87,
                     ),
                   ),

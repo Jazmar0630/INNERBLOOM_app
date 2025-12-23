@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../mood/mood_appreciation.dart';
 import '../model/mood_survey_data.dart';
-import '../../services/mood_result_service.dart'; // ✅ FIX PATH (use ../services not ../../)
+import '../../services/mood_result_service.dart';
 
 class MoodResultPage extends StatefulWidget {
   final MoodSurveyData data;
@@ -17,8 +18,19 @@ class _MoodResultPageState extends State<MoodResultPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _overlayController;
   late Animation<Offset> _overlayOffset;
+
   bool _isOverlayVisible = false;
+
+  // ✅ iframe controller
   YoutubePlayerController? _overlayYoutubeController;
+
+  // ✅ Polling state (safe for web)
+  Timer? _ticker;
+  bool _isPlayerReady = false;
+  bool _isPlaying = false;
+  double _posSec = 0;
+  double _durSec = 1;
+
   int _selectedItemIndex = 0;
   double _dragOffset = 0;
 
@@ -111,8 +123,6 @@ class _MoodResultPageState extends State<MoodResultPage>
   Future<void> _fetchBackendTextForCurrentMood() async {
     final moodLabel = _detectedMoodLabel();
     final selectedTitle = _items[_selectedItemIndex].title;
-
-    // You can send both mood + selected content to backend (so it can tailor text)
     final moodPayload = '$moodLabel | content: $selectedTitle';
 
     setState(() {
@@ -211,28 +221,62 @@ class _MoodResultPageState extends State<MoodResultPage>
   }
 
   // -----------------------
-  // Video overlay controls
+  // Video overlay controls (iframe)
   // -----------------------
   void _playVideo(int index, String videoId) {
-    _overlayYoutubeController?.pause();
-    _overlayYoutubeController?.dispose();
+    // cleanup previous
+    _ticker?.cancel();
+    _overlayYoutubeController?.close();
+    _overlayYoutubeController = null;
 
-    _selectedItemIndex = index;
-    _overlayYoutubeController = YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
+    setState(() {
+      _selectedItemIndex = index;
+      _isOverlayVisible = true;
+      _backendText = '';
+      _isLoadingText = false;
+      _isPlayerReady = false;
+      _isPlaying = false;
+      _posSec = 0;
+      _durSec = 1;
+    });
+
+    final c = YoutubePlayerController.fromVideoId(
+      videoId: videoId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        strictRelatedVideos: true,
+        playsInline: true,
+        enableJavaScript: true,
         mute: false,
       ),
     );
 
-    setState(() {
-      _isOverlayVisible = true;
-      _backendText = '';
-      _isLoadingText = false;
+    c.listen((value) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = value.playerState == PlayerState.playing;
+      });
     });
 
+    _overlayYoutubeController = c;
+
     _overlayController.forward();
+
+    // poll time + duration (safe)
+    _ticker = Timer.periodic(const Duration(milliseconds: 300), (_) async {
+      if (!mounted) return;
+      try {
+        final pos = await c.currentTime;
+        final dur = await c.duration;
+        setState(() {
+          _posSec = (pos ?? 0).toDouble();
+          _durSec = ((dur ?? 1).toDouble()).clamp(1, double.infinity);
+          _isPlayerReady = true;
+        });
+      } catch (_) {}
+    });
 
     // ✅ Fetch backend response whenever user taps an item
     _fetchBackendTextForCurrentMood();
@@ -240,44 +284,46 @@ class _MoodResultPageState extends State<MoodResultPage>
 
   void _hideOverlay() {
     _overlayController.reverse().then((_) {
+      if (!mounted) return;
       setState(() {
         _isOverlayVisible = false;
         _dragOffset = 0;
       });
-      _overlayYoutubeController?.pause();
-      _overlayYoutubeController?.dispose();
+      _ticker?.cancel();
+      _ticker = null;
+
+      _overlayYoutubeController?.pauseVideo();
+      _overlayYoutubeController?.close();
       _overlayYoutubeController = null;
     });
   }
 
   void _toggleOverlayPlayPause() {
-    final c = _overlayYoutubeController;
-    if (c == null) return;
-    if (c.value.isPlaying) {
-      c.pause();
+    if (!_isPlayerReady || _overlayYoutubeController == null) return;
+    if (_isPlaying) {
+      _overlayYoutubeController!.pauseVideo();
     } else {
-      c.play();
+      _overlayYoutubeController!.playVideo();
     }
-    setState(() {});
   }
 
-  void _seekOverlayRelative(Duration offset) {
-    final c = _overlayYoutubeController;
-    if (c == null) return;
-    final pos = c.value.position;
-    c.seekTo(pos + offset);
+  void _seekOverlayRelative(int seconds) {
+    if (!_isPlayerReady || _overlayYoutubeController == null) return;
+    final next = (_posSec + seconds).clamp(0, _durSec);
+    _overlayYoutubeController!.seekTo(seconds: next.toDouble(), allowSeekAhead: true);
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes:$seconds';
+  String _formatSeconds(double sec) {
+    final s = sec.isFinite ? sec.round() : 0;
+    final m = (s ~/ 60).toString().padLeft(2, '0');
+    final r = (s % 60).toString().padLeft(2, '0');
+    return '$m:$r';
   }
 
   @override
   void dispose() {
-    _overlayYoutubeController?.dispose();
+    _ticker?.cancel();
+    _overlayYoutubeController?.close();
     _overlayController.dispose();
     super.dispose();
   }
@@ -332,7 +378,6 @@ class _MoodResultPageState extends State<MoodResultPage>
                 ],
               ),
               const SizedBox(height: 14),
-
               Text(
                 _headline,
                 style: const TextStyle(
@@ -357,7 +402,6 @@ class _MoodResultPageState extends State<MoodResultPage>
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
 
-              // ✅ Summary card (q1-q6)
               _buildSurveySummaryCard(),
 
               const Text(
@@ -391,11 +435,10 @@ class _MoodResultPageState extends State<MoodResultPage>
   }
 
   Widget _buildOverlay() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
+    final controller = _overlayYoutubeController;
+    final sliderValue = _posSec.clamp(0, _durSec);
+
+    return Positioned.fill(
       child: GestureDetector(
         onTap: _hideOverlay,
         child: Container(
@@ -445,12 +488,13 @@ class _MoodResultPageState extends State<MoodResultPage>
                           ),
                           const SizedBox(height: 18),
 
-                          // Video player
+                          // ✅ Video player (iframe)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
+                                height: 240,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
@@ -458,20 +502,18 @@ class _MoodResultPageState extends State<MoodResultPage>
                                     width: 2,
                                   ),
                                 ),
-                                height: 240,
-                                child: _overlayYoutubeController != null
-                                    ? YoutubePlayer(
-                                        controller: _overlayYoutubeController!,
-                                        showVideoProgressIndicator: true,
-                                      )
-                                    : const Center(child: CircularProgressIndicator()),
+                                child: controller == null
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : YoutubePlayerScaffold(
+                                        controller: controller,
+                                        builder: (context, player) => player,
+                                      ),
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 16),
 
-                          // ✅ Backend suggestion card (mood-based)
                           _buildBackendSuggestionCard(),
 
                           const SizedBox(height: 18),
@@ -510,29 +552,34 @@ class _MoodResultPageState extends State<MoodResultPage>
 
                           const SizedBox(height: 18),
 
-                          // Seek bar
+                          // ✅ Seek bar (using polled pos/dur)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
                               children: [
                                 Slider(
-                                  value: _overlayYoutubeController?.value.position.inSeconds.toDouble() ?? 0,
-                                  max: _overlayYoutubeController?.metadata.duration.inSeconds.toDouble() ?? 1,
-                                  onChanged: (value) {
-                                    _overlayYoutubeController?.seekTo(Duration(seconds: value.toInt()));
-                                  },
+                                  value: sliderValue,
+                                  min: 0,
+                                  max: _durSec,
+                                  onChanged: !_isPlayerReady
+                                      ? null
+                                      : (value) {
+                                          setState(() => _posSec = value);
+                                          controller?.seekTo(
+                                            seconds: value,
+                                            allowSeekAhead: true,
+                                          );
+                                        },
                                 ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      _formatDuration(_overlayYoutubeController?.value.position ?? Duration.zero),
+                                      _formatSeconds(_posSec),
                                       style: const TextStyle(fontSize: 12, color: Colors.black54),
                                     ),
                                     Text(
-                                      _formatDuration(
-                                        Duration(seconds: _overlayYoutubeController?.metadata.duration.inSeconds ?? 0),
-                                      ),
+                                      _formatSeconds(_durSec),
                                       style: const TextStyle(fontSize: 12, color: Colors.black54),
                                     ),
                                   ],
@@ -550,7 +597,7 @@ class _MoodResultPageState extends State<MoodResultPage>
                               IconButton(
                                 iconSize: 40,
                                 icon: const Icon(Icons.replay_10, color: Color(0xFF7A9BA3)),
-                                onPressed: () => _seekOverlayRelative(const Duration(seconds: -10)),
+                                onPressed: !_isPlayerReady ? null : () => _seekOverlayRelative(-10),
                               ),
                               const SizedBox(width: 16),
                               Container(
@@ -561,9 +608,7 @@ class _MoodResultPageState extends State<MoodResultPage>
                                 child: IconButton(
                                   iconSize: 36,
                                   icon: Icon(
-                                    _overlayYoutubeController?.value.isPlaying == true
-                                        ? Icons.pause
-                                        : Icons.play_arrow,
+                                    _isPlaying ? Icons.pause : Icons.play_arrow,
                                     color: Colors.white,
                                   ),
                                   onPressed: _toggleOverlayPlayPause,
@@ -573,7 +618,7 @@ class _MoodResultPageState extends State<MoodResultPage>
                               IconButton(
                                 iconSize: 40,
                                 icon: const Icon(Icons.forward_10, color: Color(0xFF7A9BA3)),
-                                onPressed: () => _seekOverlayRelative(const Duration(seconds: 10)),
+                                onPressed: !_isPlayerReady ? null : () => _seekOverlayRelative(10),
                               ),
                             ],
                           ),
