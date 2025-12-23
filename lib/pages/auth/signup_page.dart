@@ -1,7 +1,8 @@
 // lib/pages/signup_page.dart
 import 'package:flutter/material.dart';
 import 'login_page.dart';
-import '../../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -16,7 +17,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
+
   bool agreeToPolicy = false;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -25,6 +28,70 @@ class _SignUpPageState extends State<SignUpPage> {
     _password.dispose();
     _confirmPassword.dispose();
     super.dispose();
+  }
+
+  Future<void> _signup() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (!agreeToPolicy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please agree to privacy policy")),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      // 1) Create user in Firebase Auth
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _email.text.trim(),
+        password: _password.text.trim(),
+      );
+
+      final uid = cred.user!.uid;
+
+      // 2) Create user document in Firestore (users/{uid})
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'username': _username.text.trim(),
+        'email': _email.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        // optional defaults
+        'activeDays': <String, bool>{},
+      }, SetOptions(merge: true));
+
+      if (!mounted) return;
+
+      // Go to login page (or you can go straight to HomePage)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created ✅ Please login")),
+      );
+    } on FirebaseAuthException catch (e) {
+      String msg = "Signup failed";
+
+      if (e.code == 'email-already-in-use') msg = "Email already in use";
+      if (e.code == 'invalid-email') msg = "Invalid email";
+      if (e.code == 'weak-password') msg = "Password too weak (min 6 chars)";
+      if (e.code == 'operation-not-allowed') {
+        msg = "Email/Password sign-up is disabled in Firebase Console";
+      }
+      if (e.code == 'network-request-failed') msg = "No internet connection";
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Signup failed")),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -104,12 +171,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     obscureText: true,
                     decoration: _fieldDecoration('Confirm Password'),
                     validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return 'Confirm your password';
-                      }
-                      if (v != _password.text) {
-                        return 'Passwords do not match';
-                      }
+                      if (v == null || v.isEmpty) return 'Confirm your password';
+                      if (v != _password.text) return 'Passwords do not match';
                       return null;
                     },
                   ),
@@ -120,7 +183,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     children: [
                       Checkbox(
                         value: agreeToPolicy,
-                        onChanged: (v) => setState(() => agreeToPolicy = v!),
+                        onChanged: (v) => setState(() => agreeToPolicy = v ?? false),
                         activeColor: const Color(0xFF3C5C5A),
                       ),
                       const Text(
@@ -140,31 +203,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                   // Sign Up Button
                   ElevatedButton(
-              onPressed: () async {
-              if (!_formKey.currentState!.validate()) return;
-
-              if (!agreeToPolicy) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please agree to privacy policy")),
-                );
-                return;
-              }
-
-              final result = await AuthService.signup(
-                username: _username.text.trim(),
-                email: _email.text.trim(),
-                password: _password.text.trim(),
-              );
-
-              if (result["status"] == "success") {
-                Navigator.pop(context); // go back to login
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(result["error"] ?? "Signup failed")),
-                );
-              }
-            },
-
+                    onPressed: _loading ? null : _signup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3C5C5A),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -172,11 +211,18 @@ class _SignUpPageState extends State<SignUpPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text(
-                      'SIGN UP',
-                      style: TextStyle(color: Colors.white, letterSpacing: 1),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            'SIGN UP',
+                            style: TextStyle(color: Colors.white, letterSpacing: 1),
+                          ),
                   ),
+
                   const SizedBox(height: 20),
 
                   // Divider "or"
@@ -185,14 +231,13 @@ class _SignUpPageState extends State<SignUpPage> {
                       Expanded(child: Divider(color: Colors.white38)),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        child:
-                            Text('or', style: TextStyle(color: Colors.white70)),
+                        child: Text('or', style: TextStyle(color: Colors.white70)),
                       ),
                       Expanded(child: Divider(color: Colors.white38)),
                     ],
                   ),
                   const SizedBox(height: 16),
-              
+
                   // Social row (placeholders)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -205,8 +250,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
-                  // "Already have an account? Log in" link
+
+                  // Already have an account
                   Center(
                     child: Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -218,7 +263,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         InkWell(
                           onTap: () {
-                            Navigator.push(
+                            Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(builder: (_) => const LoginPage()),
                             );
