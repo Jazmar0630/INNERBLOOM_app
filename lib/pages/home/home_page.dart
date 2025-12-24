@@ -225,10 +225,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     icon: const Icon(Icons.menu, color: Colors.white),
                   ),
                 ),
-                  const CircleAvatar(
-                  radius: 36,
-                  backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
-                )
+              const CircleAvatar(
+                    radius: 18,
+                    backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
+                  )
+
                               ],
             ),
             const SizedBox(height: 8),
