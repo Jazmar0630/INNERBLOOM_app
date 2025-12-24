@@ -227,7 +227,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 ),
                 const CircleAvatar(
                   radius: 18,
-                  backgroundImage: AssetImage('assets/avatar_placeholder.png'),
+                  backgroundImage: const AssetImage(' assets/avatar_placeholder1.png'),
                 ),
               ],
             ),
