@@ -30,6 +30,17 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
+  // ✅ default map that your UserPage expects
+  Map<String, bool> _defaultActiveDays() => {
+        'mon': false,
+        'tue': false,
+        'wed': false,
+        'thu': false,
+        'fri': false,
+        'sat': false,
+        'sun': false,
+      };
+
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -53,11 +64,16 @@ class _SignUpPageState extends State<SignUpPage> {
 
       // 2) Create user document in Firestore (users/{uid})
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'uid': uid,
         'username': _username.text.trim(),
         'email': _email.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
-        // optional defaults
-        'activeDays': <String, bool>{},
+
+        // ✅ IMPORTANT: must exist + have all days
+        'activeDays': _defaultActiveDays(),
+
+        // optional
+        'lastActiveAt': null,
       }, SetOptions(merge: true));
 
       if (!mounted) return;
@@ -183,7 +199,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     children: [
                       Checkbox(
                         value: agreeToPolicy,
-                        onChanged: (v) => setState(() => agreeToPolicy = v ?? false),
+                        onChanged: (v) =>
+                            setState(() => agreeToPolicy = v ?? false),
                         activeColor: const Color(0xFF3C5C5A),
                       ),
                       const Text(
@@ -219,7 +236,8 @@ class _SignUpPageState extends State<SignUpPage> {
                           )
                         : const Text(
                             'SIGN UP',
-                            style: TextStyle(color: Colors.white, letterSpacing: 1),
+                            style:
+                                TextStyle(color: Colors.white, letterSpacing: 1),
                           ),
                   ),
 
@@ -265,7 +283,8 @@ class _SignUpPageState extends State<SignUpPage> {
                           onTap: () {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (_) => const LoginPage()),
+                              MaterialPageRoute(
+                                  builder: (_) => const LoginPage()),
                             );
                           },
                           child: const Text(

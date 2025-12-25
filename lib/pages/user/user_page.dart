@@ -1,11 +1,12 @@
-// user_page.dart
+// lib/pages/user/user_page.dart
+import 'dart:io'; // for exit(0)
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:io'; // for exit(0)
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -15,30 +16,92 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  int _navIndex = 3; // we are on the User tab
+  int _navIndex = 3; // User tab
   String? _uid;
 
   @override
   void initState() {
     super.initState();
 
-    FirebaseAuth.instance.authStateChanges().listen((user) {
+    // if already logged in
+    _uid = FirebaseAuth.instance.currentUser?.uid;
+
+    // listen auth changes
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (!mounted) return;
 
       setState(() => _uid = user?.uid);
 
       if (user != null) {
-        _markTodayActive();
+        await _ensureUserDocDefaults();
+        await _markTodayActive();
       }
     });
+
+    // if user was already logged in before listener fires
+    if (_uid != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _ensureUserDocDefaults();
+        await _markTodayActive();
+      });
+    }
   }
 
   // ---------------------------
-  // Daily check-in logic
+  // Helpers
   // ---------------------------
   String _weekdayKey(DateTime dt) {
     const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     return keys[dt.weekday - 1];
+  }
+
+  Future<void> _ensureUserDocDefaults() async {
+    if (_uid == null) return;
+
+    final ref = FirebaseFirestore.instance.collection('users').doc(_uid);
+    final snap = await ref.get();
+
+    final defaultActiveDays = const {
+      'mon': false,
+      'tue': false,
+      'wed': false,
+      'thu': false,
+      'fri': false,
+      'sat': false,
+      'sun': false,
+    };
+
+    if (!snap.exists) {
+      await ref.set({
+        'username': 'user',
+        'activeDays': defaultActiveDays,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    final data = snap.data() ?? {};
+
+    // activeDays missing or wrong type
+    if (data['activeDays'] == null || data['activeDays'] is! Map) {
+      await ref.set({'activeDays': defaultActiveDays}, SetOptions(merge: true));
+      return;
+    }
+
+    // ensure all keys exist
+    final activeDays = Map<String, dynamic>.from(data['activeDays'] as Map);
+    bool changed = false;
+
+    for (final k in defaultActiveDays.keys) {
+      if (!activeDays.containsKey(k)) {
+        activeDays[k] = false;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await ref.set({'activeDays': activeDays}, SetOptions(merge: true));
+    }
   }
 
   Future<void> _markTodayActive() async {
@@ -52,9 +115,7 @@ class _UserPageState extends State<UserPage> {
     }, SetOptions(merge: true));
   }
 
-  // ---------------------------
-  // Mood chart stream (last 7 moods)
-  // ---------------------------
+  // last 7 moods
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
 
@@ -76,28 +137,25 @@ class _UserPageState extends State<UserPage> {
     setState(() => _navIndex = index);
 
     switch (index) {
-      case 0: // Home
+      case 0:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
         );
         break;
-
-      case 1: // Mood / onboarding
+      case 1:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
         );
         break;
-
-      case 2: // Relaxation
+      case 2:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const RelaxationPage()),
         );
         break;
-
-      case 3: // User (current)
+      case 3:
         break;
     }
   }
@@ -107,19 +165,14 @@ class _UserPageState extends State<UserPage> {
     return Scaffold(
       extendBody: true,
 
-      // ✅ Drawer
       drawer: _buildAppDrawer(context),
 
-      // Gradient background
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF25424F),
-              Color(0xFFBFB7B3),
-            ],
+            colors: [Color(0xFF25424F), Color(0xFFBFB7B3)],
           ),
         ),
         child: SafeArea(
@@ -128,7 +181,7 @@ class _UserPageState extends State<UserPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top bar
+                // top bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -143,21 +196,21 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 8),
 
-                // Avatar + name
+                // avatar + name
                 Center(
                   child: Column(
-                    children: [
+                    children: const [
                       CircleAvatar(
                         radius: 42,
-                        backgroundColor: Colors.white.withOpacity(0.85),
-                        child: const Icon(
+                        backgroundColor: Color(0xDDFFFFFF),
+                        child: Icon(
                           Icons.person,
                           size: 48,
                           color: Color(0xFF25424F),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
+                      SizedBox(height: 8),
+                      Text(
                         'user',
                         style: TextStyle(
                           color: Colors.white,
@@ -171,7 +224,7 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 24),
 
-                // ✅ DAILY CHECK-IN CARD (click to check-in)
+                // DAILY CHECK-IN CARD
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () async {
@@ -182,6 +235,7 @@ class _UserPageState extends State<UserPage> {
                       return;
                     }
 
+                    await _ensureUserDocDefaults();
                     await _markTodayActive();
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -217,21 +271,19 @@ class _UserPageState extends State<UserPage> {
                         ),
                         const SizedBox(height: 16),
 
+                        // show bubbles
                         _uid == null
                             ? const Text(
                                 'Please login first',
                                 style: TextStyle(color: Colors.black54),
                               )
-                            : StreamBuilder<
-                                DocumentSnapshot<Map<String, dynamic>>>(
+                            : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                                 stream: FirebaseFirestore.instance
                                     .collection('users')
                                     .doc(_uid)
                                     .snapshots(),
                                 builder: (context, snapshot) {
-                                  if (!snapshot.hasData) {
-                                    return const SizedBox();
-                                  }
+                                  if (!snapshot.hasData) return const SizedBox();
 
                                   final data = snapshot.data!.data() ?? {};
                                   final activeDays =
@@ -325,7 +377,7 @@ class _UserPageState extends State<UserPage> {
 
                         const SizedBox(height: 16),
 
-                        // Y-axis labels + mood chart
+                        // labels + chart
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -345,7 +397,7 @@ class _UserPageState extends State<UserPage> {
                               child: Container(
                                 height: 170,
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[100],
+                                  color: Color(0xFFF2F2F2),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: StreamBuilder<
@@ -420,7 +472,6 @@ class _UserPageState extends State<UserPage> {
         ),
       ),
 
-      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
