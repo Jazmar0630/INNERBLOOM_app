@@ -23,10 +23,10 @@ class _UserPageState extends State<UserPage> {
   void initState() {
     super.initState();
 
-    // if already logged in
+    // ✅ set immediately if already logged in
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // listen auth changes
+    // ✅ listen auth changes
     FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (!mounted) return;
 
@@ -38,7 +38,7 @@ class _UserPageState extends State<UserPage> {
       }
     });
 
-    // if user was already logged in before listener fires
+    // ✅ if user was already logged in before listener fires
     if (_uid != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await _ensureUserDocDefaults();
@@ -58,10 +58,10 @@ class _UserPageState extends State<UserPage> {
   Future<void> _ensureUserDocDefaults() async {
     if (_uid == null) return;
 
-    final ref = FirebaseFirestore.instance.collection('users').doc(_uid);
+    final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
     final snap = await ref.get();
 
-    final defaultActiveDays = const {
+    const defaultActiveDays = {
       'mon': false,
       'tue': false,
       'wed': false,
@@ -109,7 +109,7 @@ class _UserPageState extends State<UserPage> {
 
     final today = _weekdayKey(DateTime.now());
 
-    await FirebaseFirestore.instance.collection('users').doc(_uid).set({
+    await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
       'activeDays.$today': true,
       'lastActiveAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -121,9 +121,9 @@ class _UserPageState extends State<UserPage> {
 
     return FirebaseFirestore.instance
         .collection('users')
-        .doc(_uid)
+        .doc(_uid!)
         .collection('moods')
-        .orderBy('createdAt', descending: false)
+        .orderBy('createdAt', descending: true)
         .limit(7)
         .snapshots();
   }
@@ -164,9 +164,7 @@ class _UserPageState extends State<UserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-
       drawer: _buildAppDrawer(context),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -238,6 +236,7 @@ class _UserPageState extends State<UserPage> {
                     await _ensureUserDocDefaults();
                     await _markTodayActive();
 
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Checked in for today ✅')),
                     );
@@ -277,19 +276,24 @@ class _UserPageState extends State<UserPage> {
                                 'Please login first',
                                 style: TextStyle(color: Colors.black54),
                               )
-                            : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                            : StreamBuilder<
+                                DocumentSnapshot<Map<String, dynamic>>>(
                                 stream: FirebaseFirestore.instance
                                     .collection('users')
-                                    .doc(_uid)
+                                    .doc(_uid!)
                                     .snapshots(),
                                 builder: (context, snapshot) {
-                                  if (!snapshot.hasData) return const SizedBox();
+                                  if (!snapshot.hasData ||
+                                      !snapshot.data!.exists) {
+                                    return const SizedBox();
+                                  }
 
-                                  final data = snapshot.data!.data() ?? {};
-                                  final activeDays =
-                                      (data['activeDays'] as Map?)
-                                              ?.cast<String, dynamic>() ??
-                                          {};
+                                  // ✅ MUST READ LIKE THIS (no exception)
+                                  final data = snapshot.data!.data()
+                                      as Map<String, dynamic>;
+                                  final Map<String, bool> activeDays =
+                                      Map<String, bool>.from(
+                                          data['activeDays'] ?? {});
 
                                   bool isActive(String key) =>
                                       activeDays[key] == true;
@@ -433,9 +437,12 @@ class _UserPageState extends State<UserPage> {
                                       );
                                     }
 
+                                    // newest -> oldest from query, reverse for left->right old->new
                                     final moods = snapshot.data!.docs
                                         .map((d) =>
                                             (d.data()['mood'] ?? 0) as int)
+                                        .toList()
+                                        .reversed
                                         .toList();
 
                                     return Row(
@@ -574,7 +581,7 @@ Widget _buildDayBubble(String label, {bool isCompleted = false}) {
 
 class _MoodLevelLabel extends StatelessWidget {
   final String text;
-  const _MoodLevelLabel(this.text);
+  const _MoodLevelLabel(this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {
