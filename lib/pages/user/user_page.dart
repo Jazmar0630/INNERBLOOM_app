@@ -248,7 +248,7 @@ class _UserPageState extends State<UserPage> {
                       ),
                       
                       // Test button
-                      if (_uid != null) ..[
+                      if (_uid != null) ...[
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: () async {
