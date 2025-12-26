@@ -32,33 +32,37 @@ class _UserPageState extends State<UserPage> {
 
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // Immediate initialization for logged in users
+    // Immediate auto check-in
     if (_uid != null) {
-      _initializeUser();
+      _autoCheckIn();
     }
 
     // Listen auth changes
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
       setState(() {
         _uid = user?.uid;
         _initError = null;
       });
       if (_uid != null) {
-        await _initializeUser();
+        _autoCheckIn();
       }
     });
   }
 
-  Future<void> _initializeUser() async {
+  void _autoCheckIn() {
     if (_uid == null) return;
     
-    try {
-      await _ensureUserDocDefaults();
-      await _markTodayActive();
-    } catch (e) {
-      if (mounted) setState(() => _initError = e.toString());
-    }
+    final today = _weekdayKey(DateTime.now());
+    
+    // Fire and forget - don't wait for completion
+    FirebaseFirestore.instance.collection('users').doc(_uid!).set({
+      'username': 'user',
+      'activeDays.$today': true,
+      'lastActiveAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)).catchError((e) {
+      // Silently handle errors
+    });
   }
 
   @override
