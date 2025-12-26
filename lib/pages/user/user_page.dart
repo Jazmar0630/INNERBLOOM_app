@@ -108,35 +108,13 @@ class _UserPageState extends State<UserPage> {
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
 
-    DateTime now = DateTime.now();
-    DateTime startDate;
-    int limit;
-
-    switch (_selectedPeriod) {
-      case 'Weekly':
-        startDate = now.subtract(const Duration(days: 7));
-        limit = 7;
-        break;
-      case 'Monthly':
-        startDate = DateTime(now.year, now.month - 1, now.day);
-        limit = 30;
-        break;
-      case 'Yearly':
-        startDate = DateTime(now.year - 1, now.month, now.day);
-        limit = 365;
-        break;
-      default:
-        startDate = now.subtract(const Duration(days: 7));
-        limit = 7;
-    }
-
+    // Simplified query for better performance
     return FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
         .collection('moods')
-        .where('createdAt', isGreaterThan: Timestamp.fromDate(startDate))
         .orderBy('createdAt', descending: true)
-        .limit(limit)
+        .limit(_selectedPeriod == 'Weekly' ? 7 : _selectedPeriod == 'Monthly' ? 30 : 50)
         .snapshots();
   }
 
@@ -487,11 +465,11 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
-                                  if (!snapshot.hasData) {
+                                  if (!snapshot.hasData || snapshot.connectionState == ConnectionState.waiting) {
                                     return const Center(
-                                      child: Text(
-                                        'Loading...',
-                                        style: TextStyle(fontSize: 12, color: Colors.black38),
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFF25424F),
+                                        strokeWidth: 2,
                                       ),
                                     );
                                   }
@@ -500,34 +478,46 @@ class _UserPageState extends State<UserPage> {
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
+                                          Icon(
+                                            Icons.mood,
+                                            size: 32,
+                                            color: Colors.black26,
+                                          ),
+                                          const SizedBox(height: 8),
                                           const Text(
                                             'No mood data yet',
                                             style: TextStyle(fontSize: 12, color: Colors.black38),
                                           ),
-                                          const SizedBox(height: 8),
-                                          ElevatedButton(
-                                            onPressed: _addSampleMood,
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF25424F),
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                            ),
-                                            child: const Text(
-                                              'Add Sample',
-                                              style: TextStyle(fontSize: 10, color: Colors.white),
-                                            ),
+                                          const SizedBox(height: 4),
+                                          const Text(
+                                            'Complete a mood survey to see your chart',
+                                            style: TextStyle(fontSize: 10, color: Colors.black26),
                                           ),
                                         ],
                                       ),
                                     );
                                   }
-                                  final moods = snapshot.data!.docs
+                                  // Process mood data for selected period
+                                  final allMoods = snapshot.data!.docs
                                       .map((d) {
                                         final v = d.data()['mood'];
                                         return (v is int) ? v : 0;
                                       })
-                                      .toList()
-                                      .reversed
                                       .toList();
+                                  
+                                  // Filter by period and reverse for chronological order
+                                  final displayLimit = _selectedPeriod == 'Weekly' ? 7 : 
+                                                     _selectedPeriod == 'Monthly' ? 30 : 50;
+                                  final moods = allMoods.take(displayLimit).toList().reversed.toList();
+                                  
+                                  if (moods.isEmpty) {
+                                    return const Center(
+                                      child: Text(
+                                        'No mood data for selected period',
+                                        style: TextStyle(fontSize: 12, color: Colors.black38),
+                                      ),
+                                    );
+                                  }
                                   return CustomPaint(
                                     painter: MoodChartPainter(moods),
                                     child: Container(),
