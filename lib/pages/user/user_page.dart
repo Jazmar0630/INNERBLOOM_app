@@ -107,11 +107,14 @@ class _UserPageState extends State<UserPage> {
     if (_uid == null) return;
 
     final today = _weekdayKey(DateTime.now());
+    print('Marking today ($today) as active for user $_uid');
 
     await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
       'activeDays.$today': true,
       'lastActiveAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    
+    print('Successfully marked $today as active');
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
@@ -359,6 +362,8 @@ class _UserPageState extends State<UserPage> {
 
                               final data = doc.data() ?? {};
                               final raw = data['activeDays'];
+                              print('User doc data: $data');
+                              print('Active days raw: $raw');
 
                               final Map<String, bool> activeDays =
                                   (raw is Map)
