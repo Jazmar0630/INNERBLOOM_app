@@ -88,9 +88,9 @@ class _UserPageState extends State<UserPage> {
     final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
     
     try {
-      final doc = await ref.get(const GetOptions(source: Source.cache));
+      final doc = await ref.get();
       
-      // Only set defaults if document doesn't exist in cache
+      // Only set defaults if document doesn't exist
       if (!doc.exists) {
         await ref.set({
           'username': 'user',
@@ -107,19 +107,10 @@ class _UserPageState extends State<UserPage> {
         });
       }
     } catch (e) {
-      // If offline, just set defaults with merge
+      // If offline, try to set only missing fields without overwriting
       await ref.set({
         'username': 'user',
         'createdAt': FieldValue.serverTimestamp(),
-        'activeDays': const {
-          'mon': false,
-          'tue': false,
-          'wed': false,
-          'thu': false,
-          'fri': false,
-          'sat': false,
-          'sun': false,
-        },
       }, SetOptions(merge: true));
     }
   }
