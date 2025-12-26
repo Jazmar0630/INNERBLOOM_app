@@ -86,10 +86,28 @@ class _UserPageState extends State<UserPage> {
     if (_uid == null) return;
 
     final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
-    final doc = await ref.get();
     
-    // Only set defaults if document doesn't exist
-    if (!doc.exists) {
+    try {
+      final doc = await ref.get(const GetOptions(source: Source.cache));
+      
+      // Only set defaults if document doesn't exist in cache
+      if (!doc.exists) {
+        await ref.set({
+          'username': 'user',
+          'createdAt': FieldValue.serverTimestamp(),
+          'activeDays': const {
+            'mon': false,
+            'tue': false,
+            'wed': false,
+            'thu': false,
+            'fri': false,
+            'sat': false,
+            'sun': false,
+          },
+        });
+      }
+    } catch (e) {
+      // If offline, just set defaults with merge
       await ref.set({
         'username': 'user',
         'createdAt': FieldValue.serverTimestamp(),
@@ -102,7 +120,7 @@ class _UserPageState extends State<UserPage> {
           'sat': false,
           'sun': false,
         },
-      });
+      }, SetOptions(merge: true));
     }
   }
 
@@ -111,10 +129,15 @@ class _UserPageState extends State<UserPage> {
 
     final today = _weekdayKey(DateTime.now());
 
-    await FirebaseFirestore.instance.collection('users').doc(_uid!).update({
-      'activeDays.$today': true,
-      'lastActiveAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(_uid!).update({
+        'activeDays.$today': true,
+        'lastActiveAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      // If offline, the update will be queued automatically
+      print('Check-in will sync when online: $e');
+    }
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
