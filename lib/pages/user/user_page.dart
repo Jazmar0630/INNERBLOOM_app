@@ -25,38 +25,32 @@ class _UserPageState extends State<UserPage> {
 
   String? _initError;
 
-  // ✅ prevents multiple auto check-in calls
+  // ✅ prevents multiple auto-writes in same session/build
   bool _autoMarkedThisSession = false;
 
   @override
   void initState() {
     super.initState();
 
-    // initial
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // if already logged in, auto check-in once
+    // ✅ Auto check-in immediately if already logged in
     if (_uid != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _autoCheckInOnce();
-      });
+      _autoCheckInOnce();
     }
 
-    // auth listener
+    // ✅ Listen auth changes
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
       setState(() {
         _uid = user?.uid;
         _initError = null;
+        // ✅ reset when user changes
+        _autoMarkedThisSession = false;
       });
 
-      if (user != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _autoCheckInOnce();
-        });
-      } else {
-        // user logged out -> reset flag
-        _autoMarkedThisSession = false;
+      if (_uid != null) {
+        _autoCheckInOnce();
       }
     });
   }
@@ -75,17 +69,7 @@ class _UserPageState extends State<UserPage> {
     return keys[dt.weekday - 1];
   }
 
-  Map<String, bool> _defaultActiveDays() => const {
-        'mon': false,
-        'tue': false,
-        'wed': false,
-        'thu': false,
-        'fri': false,
-        'sat': false,
-        'sun': false,
-      };
-
-  /// ✅ Auto-check in that runs only once per page session
+  /// ✅ Auto check-in (runs once per session)
   Future<void> _autoCheckInOnce() async {
     if (_uid == null) return;
     if (_autoMarkedThisSession) return;
@@ -95,30 +79,43 @@ class _UserPageState extends State<UserPage> {
     try {
       await _markTodayActive();
     } catch (e) {
-      // if fails, allow retry next time page rebuilds/login
       _autoMarkedThisSession = false;
       if (!mounted) return;
       setState(() => _initError = e.toString());
     }
   }
 
-  /// ✅ Safe check-in: create doc if missing, update today's flag, no overwrite
+  /// ✅ Safe: create defaults if doc missing, then update dot-path
   Future<void> _markTodayActive() async {
     if (_uid == null) return;
 
-    final today = _weekdayKey(DateTime.now());
     final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
+    final today = _weekdayKey(DateTime.now());
 
-    // We do everything with merge:true (safe)
-    // - ensures activeDays exists (without overwriting existing)
-    // - sets today's key true
-    await ref.set({
-      'username': 'user',
-      'createdAt': FieldValue.serverTimestamp(),
-      'activeDays': _defaultActiveDays(),
+    final snap = await ref.get();
+
+    // If doc doesn't exist, create defaults first
+    if (!snap.exists) {
+      await ref.set({
+        'username': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+        'activeDays': const {
+          'mon': false,
+          'tue': false,
+          'wed': false,
+          'thu': false,
+          'fri': false,
+          'sat': false,
+          'sun': false,
+        },
+      }, SetOptions(merge: true));
+    }
+
+    // Update today's active status
+    await ref.update({
       'activeDays.$today': true,
       'lastActiveAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    });
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
@@ -188,6 +185,12 @@ class _UserPageState extends State<UserPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ IMPORTANT (Web / navigation / hot reload):
+    // If initState didn't run again, this will still trigger auto check-in once.
+    if (_uid != null && !_autoMarkedThisSession) {
+      Future.microtask(_autoCheckInOnce);
+    }
+
     return Scaffold(
       extendBody: true,
       drawer: _buildAppDrawer(context),
@@ -276,7 +279,7 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 24),
 
-                // Daily Check-in Card (tap still works, but auto is already done)
+                // Daily Check-in Card
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () async {
@@ -360,6 +363,14 @@ class _UserPageState extends State<UserPage> {
                               }
 
                               final doc = snapshot.data!;
+                              if (!doc.exists) {
+                                return const Text(
+                                  'No user doc found (auto check-in should create it)',
+                                  style: TextStyle(
+                                      color: Colors.black54, fontSize: 12),
+                                );
+                              }
+
                               final data = doc.data() ?? {};
                               final raw = data['activeDays'];
 
@@ -500,7 +511,8 @@ class _UserPageState extends State<UserPage> {
                                         child: Text(
                                           'Mood error:\n${snapshot.error}',
                                           style: const TextStyle(
-                                              fontSize: 12, color: Colors.red),
+                                              fontSize: 12,
+                                              color: Colors.red),
                                           textAlign: TextAlign.center,
                                         ),
                                       ),
@@ -553,7 +565,6 @@ class _UserPageState extends State<UserPage> {
                                     );
                                   }
 
-                                  // last 7 (oldest -> newest)
                                   final moods = snapshot.data!.docs
                                       .map((d) {
                                         final v = d.data()['mood'];
