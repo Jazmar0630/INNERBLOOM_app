@@ -109,10 +109,10 @@ class _UserPageState extends State<UserPage> {
     final today = _weekdayKey(DateTime.now());
     print('Marking today ($today) as active for user $_uid');
 
-    await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
+    await FirebaseFirestore.instance.collection('users').doc(_uid!).update({
       'activeDays.$today': true,
       'lastActiveAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    });
     
     print('Successfully marked $today as active');
   }
