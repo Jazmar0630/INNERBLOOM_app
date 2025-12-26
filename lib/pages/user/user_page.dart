@@ -23,77 +23,42 @@ class _UserPageState extends State<UserPage> {
 
   StreamSubscription<User?>? _authSub;
 
-  bool _initializing = false;
   String? _initError;
+
+  // ✅ prevents multiple auto check-in calls
+  bool _autoMarkedThisSession = false;
 
   @override
   void initState() {
     super.initState();
 
+    // initial
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // Immediate auto check-in
+    // if already logged in, auto check-in once
     if (_uid != null) {
-      _autoCheckIn();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoCheckInOnce();
+      });
     }
 
-    // Listen auth changes
+    // auth listener
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
       setState(() {
         _uid = user?.uid;
         _initError = null;
       });
-      if (_uid != null) {
-        _autoCheckIn();
+
+      if (user != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _autoCheckInOnce();
+        });
+      } else {
+        // user logged out -> reset flag
+        _autoMarkedThisSession = false;
       }
     });
-  }
-
-  void _autoCheckIn() async {
-    if (_uid == null) return;
-    
-    final today = _weekdayKey(DateTime.now());
-    final docRef = FirebaseFirestore.instance.collection('users').doc(_uid!);
-    
-    try {
-      // First ensure document exists
-      await docRef.set({
-        'username': 'user',
-        'createdAt': FieldValue.serverTimestamp(),
-        'activeDays': {
-          'mon': false,
-          'tue': false,
-          'wed': false,
-          'thu': false,
-          'fri': false,
-          'sat': false,
-          'sun': false,
-        },
-      }, SetOptions(merge: true));
-      
-      // Then update today's status
-      await docRef.update({
-        'activeDays.$today': true,
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      // Fallback: create complete document
-      await docRef.set({
-        'username': 'user',
-        'createdAt': FieldValue.serverTimestamp(),
-        'activeDays': {
-          'mon': today == 'mon',
-          'tue': today == 'tue',
-          'wed': today == 'wed',
-          'thu': today == 'thu',
-          'fri': today == 'fri',
-          'sat': today == 'sat',
-          'sun': today == 'sun',
-        },
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      });
-    }
   }
 
   @override
@@ -110,66 +75,50 @@ class _UserPageState extends State<UserPage> {
     return keys[dt.weekday - 1];
   }
 
-  Future<void> _ensureUserDocDefaults() async {
-    if (_uid == null) return;
+  Map<String, bool> _defaultActiveDays() => const {
+        'mon': false,
+        'tue': false,
+        'wed': false,
+        'thu': false,
+        'fri': false,
+        'sat': false,
+        'sun': false,
+      };
 
-    final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
-    
+  /// ✅ Auto-check in that runs only once per page session
+  Future<void> _autoCheckInOnce() async {
+    if (_uid == null) return;
+    if (_autoMarkedThisSession) return;
+
+    _autoMarkedThisSession = true;
+
     try {
-      final doc = await ref.get();
-      
-      // Only set defaults if document doesn't exist
-      if (!doc.exists) {
-        await ref.set({
-          'username': 'user',
-          'createdAt': FieldValue.serverTimestamp(),
-          'activeDays': const {
-            'mon': false,
-            'tue': false,
-            'wed': false,
-            'thu': false,
-            'fri': false,
-            'sat': false,
-            'sun': false,
-          },
-        });
-      }
+      await _markTodayActive();
     } catch (e) {
-      // If offline, try to set only missing fields without overwriting
-      await ref.set({
-        'username': 'user',
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      // if fails, allow retry next time page rebuilds/login
+      _autoMarkedThisSession = false;
+      if (!mounted) return;
+      setState(() => _initError = e.toString());
     }
   }
 
+  /// ✅ Safe check-in: create doc if missing, update today's flag, no overwrite
   Future<void> _markTodayActive() async {
     if (_uid == null) return;
 
     final today = _weekdayKey(DateTime.now());
+    final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
 
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(_uid!).update({
-        'activeDays.$today': true,
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      // If update fails, create doc with today active
-      await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
-        'username': 'user',
-        'createdAt': FieldValue.serverTimestamp(),
-        'activeDays': {
-          'mon': today == 'mon',
-          'tue': today == 'tue', 
-          'wed': today == 'wed',
-          'thu': today == 'thu',
-          'fri': today == 'fri',
-          'sat': today == 'sat',
-          'sun': today == 'sun',
-        },
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      });
-    }
+    // We do everything with merge:true (safe)
+    // - ensures activeDays exists (without overwriting existing)
+    // - sets today's key true
+    await ref.set({
+      'username': 'user',
+      'createdAt': FieldValue.serverTimestamp(),
+      'activeDays': _defaultActiveDays(),
+      'activeDays.$today': true,
+      'lastActiveAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
@@ -191,10 +140,10 @@ class _UserPageState extends State<UserPage> {
 
   Future<void> _addSampleMood() async {
     if (_uid == null) return;
-    
+
     final moods = [1, 2, 3, 4, 5];
     final randomMood = (moods..shuffle()).first;
-    
+
     await FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
@@ -327,7 +276,7 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 24),
 
-                // Daily Check-in Card
+                // Daily Check-in Card (tap still works, but auto is already done)
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () async {
@@ -399,39 +348,35 @@ class _UserPageState extends State<UserPage> {
 
                               if (!snapshot.hasData) {
                                 return Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: List.generate(7, (i) => 
-                                    _buildDayBubble(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i])
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: List.generate(
+                                    7,
+                                    (i) => _buildDayBubble(
+                                      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                                    ),
                                   ),
                                 );
                               }
 
                               final doc = snapshot.data!;
-                              if (!doc.exists) {
-                                return const Text(
-                                  'No user doc found (tap Daily check-in once)',
-                                  style: TextStyle(
-                                      color: Colors.black54, fontSize: 12),
-                                );
-                              }
-
                               final data = doc.data() ?? {};
                               final raw = data['activeDays'];
 
-                              final Map<String, bool> activeDays =
-                                  (raw is Map)
-                                      ? Map<String, bool>.from(
-                                          raw.map((k, v) => MapEntry(
-                                                k.toString(),
-                                                v == true,
-                                              )),
-                                        )
-                                      : {};
+                              final Map<String, bool> activeDays = (raw is Map)
+                                  ? Map<String, bool>.from(
+                                      raw.map((k, v) => MapEntry(
+                                            k.toString(),
+                                            v == true,
+                                          )),
+                                    )
+                                  : {};
 
                               bool isActive(String key) => activeDays[key] == true;
 
                               return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   _buildDayBubble('Mon',
                                       isCompleted: isActive('mon')),
@@ -458,10 +403,11 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 16),
 
-                // Insights Card (fixed height to avoid overflow)
+                // Insights Card
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
@@ -532,7 +478,8 @@ class _UserPageState extends State<UserPage> {
                                 color: const Color(0xFFF2F2F2),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                              child: StreamBuilder<
+                                  QuerySnapshot<Map<String, dynamic>>>(
                                 stream: _moodStream(),
                                 builder: (context, snapshot) {
                                   if (_uid == null) {
@@ -564,7 +511,9 @@ class _UserPageState extends State<UserPage> {
                                     return const Center(
                                       child: Text(
                                         'Loading...',
-                                        style: TextStyle(fontSize: 12, color: Colors.black38),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black38),
                                       ),
                                     );
                                   }
@@ -572,7 +521,8 @@ class _UserPageState extends State<UserPage> {
                                   if (snapshot.data!.docs.isEmpty) {
                                     return Center(
                                       child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           const Text(
                                             'No mood data yet',
@@ -584,12 +534,18 @@ class _UserPageState extends State<UserPage> {
                                           ElevatedButton(
                                             onPressed: _addSampleMood,
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF25424F),
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              backgroundColor:
+                                                  const Color(0xFF25424F),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6),
                                             ),
                                             child: const Text(
                                               'Add Sample',
-                                              style: TextStyle(fontSize: 10, color: Colors.white),
+                                              style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.white),
                                             ),
                                           ),
                                         ],
@@ -597,7 +553,7 @@ class _UserPageState extends State<UserPage> {
                                     );
                                   }
 
-                                  // Get last 7, show oldest->newest
+                                  // last 7 (oldest -> newest)
                                   final moods = snapshot.data!.docs
                                       .map((d) {
                                         final v = d.data()['mood'];
@@ -609,7 +565,8 @@ class _UserPageState extends State<UserPage> {
 
                                   return Row(
                                     crossAxisAlignment: CrossAxisAlignment.end,
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
                                     children: moods.map((mood) {
                                       final safeMood = mood.clamp(0, 5);
                                       return Container(
@@ -617,7 +574,8 @@ class _UserPageState extends State<UserPage> {
                                         height: safeMood * 30.0,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF25424F),
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                         ),
                                       );
                                     }).toList(),
