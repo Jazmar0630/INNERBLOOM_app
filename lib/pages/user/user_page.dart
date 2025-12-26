@@ -65,9 +65,7 @@ class _UserPageState extends State<UserPage> {
     });
 
     try {
-      // ✅ Guaranteed write first (NO get() needed)
       await _ensureUserDocDefaults();
-      await _markTodayActive();
     } catch (e) {
       if (mounted) setState(() => _initError = e.toString());
     } finally {
@@ -282,9 +280,7 @@ class _UserPageState extends State<UserPage> {
                     }
 
                     try {
-                      await _ensureUserDocDefaults();
                       await _markTodayActive();
-
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Checked in for today ✅')),
@@ -330,13 +326,6 @@ class _UserPageState extends State<UserPage> {
                             'Please login first',
                             style: TextStyle(color: Colors.black54),
                           )
-                        else if (_initializing)
-                          const SizedBox(
-                            height: 26,
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
                         else
                           StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                             stream: _userDocStream(),
@@ -350,10 +339,10 @@ class _UserPageState extends State<UserPage> {
                               }
 
                               if (!snapshot.hasData) {
-                                return const SizedBox(
-                                  height: 26,
-                                  child: Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: List.generate(7, (i) => 
+                                    _buildDayBubble(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i])
                                   ),
                                 );
                               }
@@ -514,7 +503,10 @@ class _UserPageState extends State<UserPage> {
 
                                   if (!snapshot.hasData) {
                                     return const Center(
-                                      child: CircularProgressIndicator(),
+                                      child: Text(
+                                        'Loading...',
+                                        style: TextStyle(fontSize: 12, color: Colors.black38),
+                                      ),
                                     );
                                   }
 

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../mood/mood_appreciation.dart';
 import '../model/mood_survey_data.dart';
 import '../../services/mood_result_service.dart';
@@ -80,6 +82,32 @@ class _MoodResultPageState extends State<MoodResultPage>
     );
     _overlayOffset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
         .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
+    
+    _saveMoodToFirestore();
+  }
+
+  // Save mood data to Firestore
+  Future<void> _saveMoodToFirestore() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final moodValue = (_avgScore * 1.25).round().clamp(1, 5);
+    
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('moods')
+          .add({
+        'mood': moodValue,
+        'avgScore': _avgScore,
+        'totalScore': _totalScore,
+        'detectedMood': _detectedMoodLabel(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Failed to save mood: $e');
+    }
   }
 
   // -----------------------
