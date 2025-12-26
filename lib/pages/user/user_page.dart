@@ -66,6 +66,7 @@ class _UserPageState extends State<UserPage> {
 
     try {
       await _ensureUserDocDefaults();
+      await _markTodayActive();
     } catch (e) {
       if (mounted) setState(() => _initError = e.toString());
     } finally {
