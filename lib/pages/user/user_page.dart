@@ -32,9 +32,9 @@ class _UserPageState extends State<UserPage> {
 
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // Immediate check-in for logged in users
+    // Immediate initialization for logged in users
     if (_uid != null) {
-      _markTodayActive();
+      _initializeUser();
     }
 
     // Listen auth changes
@@ -45,9 +45,20 @@ class _UserPageState extends State<UserPage> {
         _initError = null;
       });
       if (_uid != null) {
-        await _markTodayActive();
+        await _initializeUser();
       }
     });
+  }
+
+  Future<void> _initializeUser() async {
+    if (_uid == null) return;
+    
+    try {
+      await _ensureUserDocDefaults();
+      await _markTodayActive();
+    } catch (e) {
+      if (mounted) setState(() => _initError = e.toString());
+    }
   }
 
   @override
