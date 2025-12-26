@@ -50,26 +50,50 @@ class _UserPageState extends State<UserPage> {
     });
   }
 
-  void _autoCheckIn() {
+  void _autoCheckIn() async {
     if (_uid == null) return;
     
     final today = _weekdayKey(DateTime.now());
+    final docRef = FirebaseFirestore.instance.collection('users').doc(_uid!);
     
-    // Use async operation with proper completion
-    FirebaseFirestore.instance.collection('users').doc(_uid!).set({
-      'username': 'user',
-      'activeDays.$today': true,
-      'lastActiveAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true)).then((_) {
-      // Force UI refresh after write completes
-      if (mounted) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) setState(() {});
-        });
-      }
-    }).catchError((e) {
-      // Silently handle errors
-    });
+    try {
+      // First ensure document exists
+      await docRef.set({
+        'username': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+        'activeDays': {
+          'mon': false,
+          'tue': false,
+          'wed': false,
+          'thu': false,
+          'fri': false,
+          'sat': false,
+          'sun': false,
+        },
+      }, SetOptions(merge: true));
+      
+      // Then update today's status
+      await docRef.update({
+        'activeDays.$today': true,
+        'lastActiveAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      // Fallback: create complete document
+      await docRef.set({
+        'username': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+        'activeDays': {
+          'mon': today == 'mon',
+          'tue': today == 'tue',
+          'wed': today == 'wed',
+          'thu': today == 'thu',
+          'fri': today == 'fri',
+          'sat': today == 'sat',
+          'sun': today == 'sun',
+        },
+        'lastActiveAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   @override
