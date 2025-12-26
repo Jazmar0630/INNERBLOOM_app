@@ -18,43 +18,34 @@ class UserPage extends StatefulWidget {
 }
 
 class _UserPageState extends State<UserPage> {
-  int _navIndex = 3; // User tab
+  int _navIndex = 3;
   String? _uid;
 
   StreamSubscription<User?>? _authSub;
-  bool _didInitForUid = false; // prevents double init writes
+
+  bool _initializing = false;
+  String? _initError;
 
   @override
   void initState() {
     super.initState();
 
-    // set immediately (if already logged in)
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // if already logged in, do Firestore init once after first frame
-    if (_uid != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        await _initUserDataOnce();
-      });
-    }
+    // Run once after first frame (if already logged in)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _initIfLoggedIn();
+    });
 
-    // listen to auth changes
+    // Listen auth changes
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (!mounted) return;
-
-      final newUid = user?.uid;
-
-      // if uid changed, reset init flag
-      if (newUid != _uid) {
-        _didInitForUid = false;
-      }
-
-      setState(() => _uid = newUid);
-
-      if (newUid != null) {
-        await _initUserDataOnce();
-      }
+      setState(() {
+        _uid = user?.uid;
+        _initError = null;
+      });
+      await _initIfLoggedIn();
     });
   }
 
@@ -64,20 +55,29 @@ class _UserPageState extends State<UserPage> {
     super.dispose();
   }
 
-  // ---------------------------
-  // Init + helpers
-  // ---------------------------
-
-  Future<void> _initUserDataOnce() async {
+  Future<void> _initIfLoggedIn() async {
     if (_uid == null) return;
-    if (_didInitForUid) return;
+    if (_initializing) return;
 
-    _didInitForUid = true;
+    setState(() {
+      _initializing = true;
+      _initError = null;
+    });
 
-    await _ensureUserDocDefaults();
-    await _markTodayActive();
+    try {
+      // ✅ Guaranteed write first (NO get() needed)
+      await _ensureUserDocDefaults();
+      await _markTodayActive();
+    } catch (e) {
+      if (mounted) setState(() => _initError = e.toString());
+    } finally {
+      if (mounted) setState(() => _initializing = false);
+    }
   }
 
+  // ---------------------------
+  // Firestore helpers
+  // ---------------------------
   String _weekdayKey(DateTime dt) {
     const keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     return keys[dt.weekday - 1];
@@ -87,49 +87,21 @@ class _UserPageState extends State<UserPage> {
     if (_uid == null) return;
 
     final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
-    final snap = await ref.get();
 
-    const defaultActiveDays = {
-      'mon': false,
-      'tue': false,
-      'wed': false,
-      'thu': false,
-      'fri': false,
-      'sat': false,
-      'sun': false,
-    };
-
-    if (!snap.exists) {
-      await ref.set({
-        'username': 'user',
-        'activeDays': defaultActiveDays,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      return;
-    }
-
-    final data = snap.data() ?? {};
-
-    // activeDays missing or wrong type
-    if (data['activeDays'] == null || data['activeDays'] is! Map) {
-      await ref.set({'activeDays': defaultActiveDays}, SetOptions(merge: true));
-      return;
-    }
-
-    // ensure all keys exist
-    final activeDays = Map<String, dynamic>.from(data['activeDays'] as Map);
-    bool changed = false;
-
-    for (final k in defaultActiveDays.keys) {
-      if (!activeDays.containsKey(k)) {
-        activeDays[k] = false;
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      await ref.set({'activeDays': activeDays}, SetOptions(merge: true));
-    }
+    // ✅ Always merge defaults (creates doc if missing)
+    await ref.set({
+      'username': 'user',
+      'createdAt': FieldValue.serverTimestamp(),
+      'activeDays': const {
+        'mon': false,
+        'tue': false,
+        'wed': false,
+        'thu': false,
+        'fri': false,
+        'sat': false,
+        'sun': false,
+      },
+    }, SetOptions(merge: true));
   }
 
   Future<void> _markTodayActive() async {
@@ -143,7 +115,11 @@ class _UserPageState extends State<UserPage> {
     }, SetOptions(merge: true));
   }
 
-  // last 7 moods (newest first)
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
+    if (_uid == null) return const Stream.empty();
+    return FirebaseFirestore.instance.collection('users').doc(_uid!).snapshots();
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
 
@@ -154,6 +130,22 @@ class _UserPageState extends State<UserPage> {
         .orderBy('createdAt', descending: true)
         .limit(7)
         .snapshots();
+  }
+
+  Future<void> _addSampleMood() async {
+    if (_uid == null) return;
+    
+    final moods = [1, 2, 3, 4, 5];
+    final randomMood = (moods..shuffle()).first;
+    
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_uid!)
+        .collection('moods')
+        .add({
+      'mood': randomMood,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // ---------------------------
@@ -202,12 +194,12 @@ class _UserPageState extends State<UserPage> {
           ),
         ),
         child: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // top bar
+                // Top bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -222,7 +214,7 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 8),
 
-                // avatar + name
+                // Avatar + name + uid + error
                 Center(
                   child: Column(
                     children: [
@@ -244,8 +236,6 @@ class _UserPageState extends State<UserPage> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-
-                      // debug uid
                       const SizedBox(height: 6),
                       Text(
                         'UID: ${_uid ?? "-"}',
@@ -254,13 +244,33 @@ class _UserPageState extends State<UserPage> {
                           fontSize: 11,
                         ),
                       ),
+
+                      if (_initError != null) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          constraints: const BoxConstraints(maxWidth: 720),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red),
+                          ),
+                          child: Text(
+                            'Firestore error:\n$_initError',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // DAILY CHECK-IN CARD
+                // Daily Check-in Card
                 InkWell(
                   borderRadius: BorderRadius.circular(24),
                   onTap: () async {
@@ -271,18 +281,25 @@ class _UserPageState extends State<UserPage> {
                       return;
                     }
 
-                    await _ensureUserDocDefaults();
-                    await _markTodayActive();
+                    try {
+                      await _ensureUserDocDefaults();
+                      await _markTodayActive();
 
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Checked in for today ✅')),
-                    );
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Checked in for today ✅')),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Check-in failed: $e')),
+                      );
+                    }
                   },
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
@@ -313,12 +330,16 @@ class _UserPageState extends State<UserPage> {
                             'Please login first',
                             style: TextStyle(color: Colors.black54),
                           )
+                        else if (_initializing)
+                          const SizedBox(
+                            height: 26,
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
                         else
                           StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(_uid!)
-                                .snapshots(),
+                            stream: _userDocStream(),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return Text(
@@ -328,42 +349,41 @@ class _UserPageState extends State<UserPage> {
                                 );
                               }
 
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
+                              if (!snapshot.hasData) {
                                 return const SizedBox(
                                   height: 26,
                                   child: Center(
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   ),
                                 );
                               }
 
-                              if (!snapshot.hasData || !snapshot.data!.exists) {
+                              final doc = snapshot.data!;
+                              if (!doc.exists) {
                                 return const Text(
-                                  'No user doc found',
+                                  'No user doc found (tap Daily check-in once)',
                                   style: TextStyle(
                                       color: Colors.black54, fontSize: 12),
                                 );
                               }
 
-                              final data = snapshot.data!.data() ?? {};
+                              final data = doc.data() ?? {};
                               final raw = data['activeDays'];
 
-                              // if wrong type, treat as empty map (UI still renders)
                               final Map<String, bool> activeDays =
                                   (raw is Map)
                                       ? Map<String, bool>.from(
                                           raw.map((k, v) => MapEntry(
-                                              k.toString(), v == true)))
+                                                k.toString(),
+                                                v == true,
+                                              )),
+                                        )
                                       : {};
 
-                              bool isActive(String key) =>
-                                  activeDays[key] == true;
+                              bool isActive(String key) => activeDays[key] == true;
 
                               return Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   _buildDayBubble('Mon',
                                       isCompleted: isActive('mon')),
@@ -390,162 +410,178 @@ class _UserPageState extends State<UserPage> {
 
                 const SizedBox(height: 16),
 
-                // INSIGHTS CARD
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // title + dropdown (static)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Insights',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
+                // Insights Card (fixed height to avoid overflow)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // title + dropdown
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Insights',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Colors.black87,
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.black26),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.calendar_today,
-                                      size: 14, color: Colors.black54),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Weekly',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.black54,
-                                    ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.black26),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 14, color: Colors.black54),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Weekly',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
                                   ),
-                                  Icon(Icons.arrow_drop_down,
-                                      size: 18, color: Colors.black54),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // labels + chart
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                _MoodLevelLabel('Happy'),
-                                _MoodLevelLabel('Good'),
-                                _MoodLevelLabel('Moderate'),
-                                _MoodLevelLabel('Sad'),
-                                _MoodLevelLabel('Awful'),
+                                ),
+                                Icon(Icons.arrow_drop_down,
+                                    size: 18, color: Colors.black54),
                               ],
                             ),
-                            const SizedBox(width: 12),
+                          ),
+                        ],
+                      ),
 
-                            Expanded(
-                              child: Container(
-                                height: 170,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF2F2F2),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: StreamBuilder<
-                                    QuerySnapshot<Map<String, dynamic>>>(
-                                  stream: _moodStream(),
-                                  builder: (context, snapshot) {
-                                    if (_uid == null) {
-                                      return const Center(
-                                        child: Text(
-                                          'Please login first',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.black38),
-                                        ),
-                                      );
-                                    }
+                      const SizedBox(height: 16),
 
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    }
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              _MoodLevelLabel('Happy'),
+                              _MoodLevelLabel('Good'),
+                              _MoodLevelLabel('Moderate'),
+                              _MoodLevelLabel('Sad'),
+                              _MoodLevelLabel('Awful'),
+                            ],
+                          ),
+                          const SizedBox(width: 12),
 
-                                    if (snapshot.hasError) {
-                                      return Text(
-                                        'Mood error: ${snapshot.error}',
-                                        style: const TextStyle(
-                                            fontSize: 12, color: Colors.red),
-                                      );
-                                    }
-
-                                    if (!snapshot.hasData ||
-                                        snapshot.data!.docs.isEmpty) {
-                                      return const Center(
-                                        child: Text(
-                                          'No mood data yet',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.black38),
-                                        ),
-                                      );
-                                    }
-
-                                    // newest -> oldest from query, reverse for old->new
-                                    final moods = snapshot.data!.docs
-                                        .map((d) {
-                                          final v = d.data()['mood'];
-                                          return (v is int) ? v : 0;
-                                        })
-                                        .toList()
-                                        .reversed
-                                        .toList();
-
-                                    return Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: moods.map((mood) {
-                                        final safeMood = mood.clamp(0, 5);
-                                        return Container(
-                                          width: 14,
-                                          height: safeMood * 30.0,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF25424F),
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                        );
-                                      }).toList(),
+                          Expanded(
+                            child: Container(
+                              height: 170,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF2F2F2),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                                stream: _moodStream(),
+                                builder: (context, snapshot) {
+                                  if (_uid == null) {
+                                    return const Center(
+                                      child: Text(
+                                        'Please login first',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black38),
+                                      ),
                                     );
-                                  },
-                                ),
+                                  }
+
+                                  if (snapshot.hasError) {
+                                    return Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Text(
+                                          'Mood error:\n${snapshot.error}',
+                                          style: const TextStyle(
+                                              fontSize: 12, color: Colors.red),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  if (!snapshot.hasData) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
+
+                                  if (snapshot.data!.docs.isEmpty) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Text(
+                                            'No mood data yet',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black38),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: _addSampleMood,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF25424F),
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                            ),
+                                            child: const Text(
+                                              'Add Sample',
+                                              style: TextStyle(fontSize: 10, color: Colors.white),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  // Get last 7, show oldest->newest
+                                  final moods = snapshot.data!.docs
+                                      .map((d) {
+                                        final v = d.data()['mood'];
+                                        return (v is int) ? v : 0;
+                                      })
+                                      .toList()
+                                      .reversed
+                                      .toList();
+
+                                  return Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: moods.map((mood) {
+                                      final safeMood = mood.clamp(0, 5);
+                                      return Container(
+                                        width: 14,
+                                        height: safeMood * 30.0,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF25424F),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  );
+                                },
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -654,7 +690,7 @@ Widget _buildDayBubble(String label, {bool isCompleted = false}) {
 
 class _MoodLevelLabel extends StatelessWidget {
   final String text;
-  const _MoodLevelLabel(this.text, {super.key});
+  const _MoodLevelLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
