@@ -22,6 +22,7 @@ class _UserPageState extends State<UserPage> {
   String? _uid;
   StreamSubscription<User?>? _authSub;
   String? _initError;
+  String _selectedPeriod = 'Weekly'; // Add period selection
 
   @override
   void initState() {
@@ -107,12 +108,35 @@ class _UserPageState extends State<UserPage> {
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
 
+    DateTime now = DateTime.now();
+    DateTime startDate;
+    int limit;
+
+    switch (_selectedPeriod) {
+      case 'Weekly':
+        startDate = now.subtract(const Duration(days: 7));
+        limit = 7;
+        break;
+      case 'Monthly':
+        startDate = DateTime(now.year, now.month - 1, now.day);
+        limit = 30;
+        break;
+      case 'Yearly':
+        startDate = DateTime(now.year - 1, now.month, now.day);
+        limit = 365;
+        break;
+      default:
+        startDate = now.subtract(const Duration(days: 7));
+        limit = 7;
+    }
+
     return FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
         .collection('moods')
+        .where('createdAt', isGreaterThan: Timestamp.fromDate(startDate))
         .orderBy('createdAt', descending: true)
-        .limit(7)
+        .limit(limit)
         .snapshots();
   }
 
@@ -377,16 +401,43 @@ class _UserPageState extends State<UserPage> {
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(color: Colors.black26),
                             ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.calendar_today, size: 14, color: Colors.black54),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Weekly',
-                                  style: TextStyle(fontSize: 12, color: Colors.black54),
-                                ),
-                                Icon(Icons.arrow_drop_down, size: 18, color: Colors.black54),
-                              ],
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedPeriod,
+                                items: ['Weekly', 'Monthly', 'Yearly'].map((String period) {
+                                  return DropdownMenuItem<String>(
+                                    value: period,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          period == 'Weekly' ? Icons.calendar_view_week :
+                                          period == 'Monthly' ? Icons.calendar_view_month :
+                                          Icons.calendar_today,
+                                          size: 14,
+                                          color: Colors.black54,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          period,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      _selectedPeriod = newValue;
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.arrow_drop_down, size: 18, color: Colors.black54),
+                              ),
                             ),
                           ),
                         ],
@@ -674,13 +725,14 @@ class MoodChartPainter extends CustomPainter {
         shadowPath.lineTo(x, y + barHeight/2);
       }
       
-      // Draw mood value on top of bar
+      // Draw mood name on top of bar
+      final moodName = _getMoodName(mood);
       final textPainter = TextPainter(
         text: TextSpan(
-          text: mood.toString(),
+          text: moodName,
           style: const TextStyle(
             color: Color(0xFF25424F),
-            fontSize: 10,
+            fontSize: 8,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -689,7 +741,7 @@ class MoodChartPainter extends CustomPainter {
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(x - textPainter.width/2, y - 15),
+        Offset(x - textPainter.width/2, y - 20),
       );
     }
     
@@ -735,6 +787,17 @@ class MoodChartPainter extends CustomPainter {
       case 2: return [const Color(0xFFFF5722), const Color(0xFFFF8A65)];
       case 1: return [const Color(0xFFF44336), const Color(0xFFE57373)];
       default: return [const Color(0xFF9E9E9E), const Color(0xFFBDBDBD)];
+    }
+  }
+  
+  String _getMoodName(int mood) {
+    switch (mood) {
+      case 5: return 'Happy';
+      case 4: return 'Good';
+      case 3: return 'Moderate';
+      case 2: return 'Sad';
+      case 1: return 'Awful';
+      default: return 'Unknown';
     }
   }
   
