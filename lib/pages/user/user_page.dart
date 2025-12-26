@@ -55,12 +55,19 @@ class _UserPageState extends State<UserPage> {
     
     final today = _weekdayKey(DateTime.now());
     
-    // Fire and forget - don't wait for completion
+    // Use async operation with proper completion
     FirebaseFirestore.instance.collection('users').doc(_uid!).set({
       'username': 'user',
       'activeDays.$today': true,
       'lastActiveAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true)).catchError((e) {
+    }, SetOptions(merge: true)).then((_) {
+      // Force UI refresh after write completes
+      if (mounted) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) setState(() {});
+        });
+      }
+    }).catchError((e) {
       // Silently handle errors
     });
   }
