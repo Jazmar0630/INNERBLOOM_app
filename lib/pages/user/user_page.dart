@@ -477,20 +477,9 @@ class _UserPageState extends State<UserPage> {
                                       .toList()
                                       .reversed
                                       .toList();
-                                  return Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: moods.map((mood) {
-                                      final safeMood = mood.clamp(0, 5);
-                                      return Container(
-                                        width: 14,
-                                        height: safeMood * 30.0,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF25424F),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                      );
-                                    }).toList(),
+                                  return CustomPaint(
+                                    painter: MoodChartPainter(moods),
+                                    child: Container(),
                                   );
                                 },
                               ),
@@ -621,4 +610,134 @@ class _MoodLevelLabel extends StatelessWidget {
       ),
     );
   }
+}
+
+class MoodChartPainter extends CustomPainter {
+  final List<int> moods;
+  
+  MoodChartPainter(this.moods);
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (moods.isEmpty) return;
+    
+    final paint = Paint()
+      ..strokeWidth = 2
+      ..style = PaintingStyle.fill;
+    
+    final linePaint = Paint()
+      ..color = const Color(0xFF25424F).withOpacity(0.8)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    final shadowPaint = Paint()
+      ..color = const Color(0xFF25424F).withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+    
+    final barWidth = size.width / (moods.length * 1.5);
+    final maxHeight = size.height - 20;
+    
+    final path = Path();
+    final shadowPath = Path();
+    bool firstPoint = true;
+    
+    // Draw bars with gradient and trend line
+    for (int i = 0; i < moods.length; i++) {
+      final mood = moods[i].clamp(0, 5);
+      final x = (i + 0.5) * (size.width / moods.length);
+      final barHeight = (mood / 5.0) * maxHeight;
+      final y = size.height - barHeight;
+      
+      // Gradient colors based on mood
+      final colors = _getMoodColors(mood);
+      paint.shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: colors,
+      ).createShader(Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight));
+      
+      // Draw bar with rounded corners
+      final barRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight),
+        const Radius.circular(6),
+      );
+      canvas.drawRRect(barRect, paint);
+      
+      // Add to trend line path
+      if (firstPoint) {
+        path.moveTo(x, y + barHeight/2);
+        shadowPath.moveTo(x, y + barHeight/2);
+        firstPoint = false;
+      } else {
+        path.lineTo(x, y + barHeight/2);
+        shadowPath.lineTo(x, y + barHeight/2);
+      }
+      
+      // Draw mood value on top of bar
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: mood.toString(),
+          style: const TextStyle(
+            color: Color(0xFF25424F),
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(x - textPainter.width/2, y - 15),
+      );
+    }
+    
+    // Draw trend line shadow
+    shadowPath.lineTo(shadowPath.getBounds().right, size.height);
+    shadowPath.lineTo(shadowPath.getBounds().left, size.height);
+    shadowPath.close();
+    canvas.drawPath(shadowPath, shadowPaint);
+    
+    // Draw trend line
+    canvas.drawPath(path, linePaint);
+    
+    // Draw trend line points
+    for (int i = 0; i < moods.length; i++) {
+      final mood = moods[i].clamp(0, 5);
+      final x = (i + 0.5) * (size.width / moods.length);
+      final barHeight = (mood / 5.0) * maxHeight;
+      final y = size.height - barHeight;
+      
+      canvas.drawCircle(
+        Offset(x, y + barHeight/2),
+        4,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        Offset(x, y + barHeight/2),
+        4,
+        Paint()
+          ..color = const Color(0xFF25424F)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+  }
+  
+  List<Color> _getMoodColors(int mood) {
+    switch (mood) {
+      case 5: return [const Color(0xFF4CAF50), const Color(0xFF81C784)];
+      case 4: return [const Color(0xFF8BC34A), const Color(0xFFAED581)];
+      case 3: return [const Color(0xFFFF9800), const Color(0xFFFFB74D)];
+      case 2: return [const Color(0xFFFF5722), const Color(0xFFFF8A65)];
+      case 1: return [const Color(0xFFF44336), const Color(0xFFE57373)];
+      default: return [const Color(0xFF9E9E9E), const Color(0xFFBDBDBD)];
+    }
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
