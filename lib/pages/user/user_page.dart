@@ -32,11 +32,10 @@ class _UserPageState extends State<UserPage> {
 
     _uid = FirebaseAuth.instance.currentUser?.uid;
 
-    // Run once after first frame (if already logged in)
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await _initIfLoggedIn();
-    });
+    // Immediate check-in for logged in users
+    if (_uid != null) {
+      _markTodayActive();
+    }
 
     // Listen auth changes
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
@@ -45,7 +44,9 @@ class _UserPageState extends State<UserPage> {
         _uid = user?.uid;
         _initError = null;
       });
-      await _initIfLoggedIn();
+      if (_uid != null) {
+        await _markTodayActive();
+      }
     });
   }
 
@@ -53,25 +54,6 @@ class _UserPageState extends State<UserPage> {
   void dispose() {
     _authSub?.cancel();
     super.dispose();
-  }
-
-  Future<void> _initIfLoggedIn() async {
-    if (_uid == null) return;
-    if (_initializing) return;
-
-    setState(() {
-      _initializing = true;
-      _initError = null;
-    });
-
-    try {
-      await _ensureUserDocDefaults();
-      await _markTodayActive();
-    } catch (e) {
-      if (mounted) setState(() => _initError = e.toString());
-    } finally {
-      if (mounted) setState(() => _initializing = false);
-    }
   }
 
   // ---------------------------
@@ -126,8 +108,21 @@ class _UserPageState extends State<UserPage> {
         'lastActiveAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      // If offline, the update will be queued automatically
-      print('Check-in will sync when online: $e');
+      // If update fails, create doc with today active
+      await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
+        'username': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+        'activeDays': {
+          'mon': today == 'mon',
+          'tue': today == 'tue', 
+          'wed': today == 'wed',
+          'thu': today == 'thu',
+          'fri': today == 'fri',
+          'sat': today == 'sat',
+          'sun': today == 'sun',
+        },
+        'lastActiveAt': FieldValue.serverTimestamp(),
+      });
     }
   }
 
