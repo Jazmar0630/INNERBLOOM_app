@@ -107,14 +107,11 @@ class _UserPageState extends State<UserPage> {
     if (_uid == null) return;
 
     final today = _weekdayKey(DateTime.now());
-    print('Marking today ($today) as active for user $_uid');
 
     await FirebaseFirestore.instance.collection('users').doc(_uid!).update({
       'activeDays.$today': true,
       'lastActiveAt': FieldValue.serverTimestamp(),
     });
-    
-    print('Successfully marked $today as active');
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
@@ -246,20 +243,6 @@ class _UserPageState extends State<UserPage> {
                           fontSize: 11,
                         ),
                       ),
-                      
-                      // Test button
-                      if (_uid != null) ...[
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await _markTodayActive();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Force check-in done')),
-                            );
-                          },
-                          child: const Text('Test Check-in', style: TextStyle(fontSize: 10)),
-                        ),
-                      ],
 
                       if (_initError != null) ...[
                         const SizedBox(height: 10),
@@ -376,10 +359,6 @@ class _UserPageState extends State<UserPage> {
 
                               final data = doc.data() ?? {};
                               final raw = data['activeDays'];
-                              final today = _weekdayKey(DateTime.now());
-                              print('Today is: $today');
-                              print('User doc data: $data');
-                              print('Active days raw: $raw');
 
                               final Map<String, bool> activeDays =
                                   (raw is Map)
