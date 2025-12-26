@@ -86,21 +86,24 @@ class _UserPageState extends State<UserPage> {
     if (_uid == null) return;
 
     final ref = FirebaseFirestore.instance.collection('users').doc(_uid!);
-
-    // ✅ Always merge defaults (creates doc if missing)
-    await ref.set({
-      'username': 'user',
-      'createdAt': FieldValue.serverTimestamp(),
-      'activeDays': const {
-        'mon': false,
-        'tue': false,
-        'wed': false,
-        'thu': false,
-        'fri': false,
-        'sat': false,
-        'sun': false,
-      },
-    }, SetOptions(merge: true));
+    final doc = await ref.get();
+    
+    // Only set defaults if document doesn't exist
+    if (!doc.exists) {
+      await ref.set({
+        'username': 'user',
+        'createdAt': FieldValue.serverTimestamp(),
+        'activeDays': const {
+          'mon': false,
+          'tue': false,
+          'wed': false,
+          'thu': false,
+          'fri': false,
+          'sat': false,
+          'sun': false,
+        },
+      });
+    }
   }
 
   Future<void> _markTodayActive() async {
