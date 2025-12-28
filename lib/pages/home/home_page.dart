@@ -542,6 +542,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 // ---------------------------------------------------------
 // ⭐ DRAWER WIDGET
 // ---------------------------------------------------------
+// Replace the _buildAppDrawer function in home_page.dart with this:
+
 Widget _buildAppDrawer(BuildContext context) {
   return Drawer(
     child: ListView(
@@ -554,9 +556,39 @@ Widget _buildAppDrawer(BuildContext context) {
             style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
-        ListTile(leading: const Icon(Icons.settings), title: const Text('Settings'), onTap: () {}),
-        ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help & Support'), onTap: () {}),
-        ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: const Text('Privacy Policy'), onTap: () {}),
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text('Settings'),
+          onTap: () {
+            Navigator.pop(context); // Close drawer first
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Help & Support'),
+          onTap: () {
+            Navigator.pop(context); // Close drawer first
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HelpSupportPage()),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.privacy_tip_outlined),
+          title: const Text('Privacy Policy'),
+          onTap: () {
+            Navigator.pop(context); // Close drawer first
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+            );
+          },
+        ),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.exit_to_app, color: Colors.red),
