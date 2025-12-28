@@ -73,7 +73,7 @@ class OnboardingIntroPage extends StatelessWidget {
                       MaterialPageRoute(builder: (_) => const MoodTrackerScreen()),
                     );
                   },
-                  child: const Text('ANSWER NOW', style: TextStyle(fontSize: 16, letterSpacing: 1.0)),
+                  child: const Text('ANSWER NOW', style: TextStyle(color: Colors.white, fontSize: 16, letterSpacing: 1.0)),
                 ),
               ),
             ),

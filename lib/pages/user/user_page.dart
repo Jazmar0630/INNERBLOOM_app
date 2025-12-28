@@ -1,6 +1,5 @@
-// lib/pages/user/user_page.dart
 import 'dart:async';
-import 'dart:io'; // exit(0)
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +8,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
+import '../drawer/settings_page.dart';
+import '../drawer/help_and_support_page.dart';
+import '../drawer/privacy_policy.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -22,7 +24,7 @@ class _UserPageState extends State<UserPage> {
   String? _uid;
   StreamSubscription<User?>? _authSub;
   String? _initError;
-  String _selectedPeriod = 'Weekly'; // Add period selection
+  String _selectedPeriod = 'Weekly';
 
   @override
   void initState() {
@@ -108,7 +110,6 @@ class _UserPageState extends State<UserPage> {
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
 
-    // Simplified query for better performance
     return FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
@@ -173,7 +174,7 @@ class _UserPageState extends State<UserPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF25424F), Color(0xFFBFB7B3)],
+            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)], // CHANGED TO MATCH HOME_PAGE
           ),
         ),
         child: SafeArea(
@@ -203,7 +204,7 @@ class _UserPageState extends State<UserPage> {
                         child: Icon(
                           Icons.person,
                           size: 48,
-                          color: Color(0xFF25424F),
+                          color: Color(0xFF3C5C5A), // CHANGED TO MATCH HOME_PAGE
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -468,7 +469,7 @@ class _UserPageState extends State<UserPage> {
                                   if (!snapshot.hasData || snapshot.connectionState == ConnectionState.waiting) {
                                     return const Center(
                                       child: CircularProgressIndicator(
-                                        color: Color(0xFF25424F),
+                                        color: Color(0xFF3C5C5A), // CHANGED TO MATCH HOME_PAGE
                                         strokeWidth: 2,
                                       ),
                                     );
@@ -497,7 +498,6 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
-                                  // Process mood data for selected period
                                   final allMoods = snapshot.data!.docs
                                       .map((d) {
                                         final v = d.data()['mood'];
@@ -505,7 +505,6 @@ class _UserPageState extends State<UserPage> {
                                       })
                                       .toList();
                                   
-                                  // Filter by period and reverse for chronological order
                                   final displayLimit = _selectedPeriod == 'Weekly' ? 7 : 
                                                      _selectedPeriod == 'Monthly' ? 30 : 50;
                                   final moods = allMoods.take(displayLimit).toList().reversed.toList();
@@ -564,51 +563,67 @@ class _UserPageState extends State<UserPage> {
       ),
     );
   }
-}
 
-// ---------------------------------------------------------
-// Drawer widget
-// ---------------------------------------------------------
-Widget _buildAppDrawer(BuildContext context) {
-  return Drawer(
-    child: ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        const DrawerHeader(
-          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
-          child: Text(
-            'InnerBloom',
-            style: TextStyle(
-              fontSize: 22,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+  // DRAWER WIDGET - MOVED INSIDE CLASS
+  Widget _buildAppDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+            child: Text(
+              'InnerBloom',
+              style: TextStyle(
+                fontSize: 22,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.settings),
-          title: const Text('Settings'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.help_outline),
-          title: const Text('Help & Support'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('Privacy Policy'),
-          onTap: () {},
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.exit_to_app, color: Colors.red),
-          title: const Text('Exit App', style: TextStyle(color: Colors.red)),
-          onTap: () => exit(0),
-        ),
-      ],
-    ),
-  );
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('Help & Support'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpSupportPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Colors.red),
+            title: const Text('Exit App', style: TextStyle(color: Colors.red)),
+            onTap: () => exit(0),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Day bubble widget
@@ -621,8 +636,8 @@ Widget _buildDayBubble(String label, {bool isCompleted = false}) {
         height: 26,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isCompleted ? const Color(0xFF25424F) : Colors.white,
-          border: Border.all(color: const Color(0xFF25424F)),
+          color: isCompleted ? const Color(0xFF3C5C5A) : Colors.white, // CHANGED TO MATCH HOME_PAGE
+          border: Border.all(color: const Color(0xFF3C5C5A)), // CHANGED TO MATCH HOME_PAGE
         ),
         child: isCompleted
             ? const Icon(Icons.check, size: 16, color: Colors.white)
@@ -667,13 +682,13 @@ class MoodChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     
     final linePaint = Paint()
-      ..color = const Color(0xFF25424F).withOpacity(0.8)
+      ..color = const Color(0xFF3C5C5A).withOpacity(0.8) // CHANGED TO MATCH HOME_PAGE
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     
     final shadowPaint = Paint()
-      ..color = const Color(0xFF25424F).withOpacity(0.1)
+      ..color = const Color(0xFF3C5C5A).withOpacity(0.1) // CHANGED TO MATCH HOME_PAGE
       ..style = PaintingStyle.fill;
     
     final barWidth = size.width / (moods.length * 1.5);
@@ -683,14 +698,12 @@ class MoodChartPainter extends CustomPainter {
     final shadowPath = Path();
     bool firstPoint = true;
     
-    // Draw bars with gradient and trend line
     for (int i = 0; i < moods.length; i++) {
       final mood = moods[i].clamp(0, 5);
       final x = (i + 0.5) * (size.width / moods.length);
       final barHeight = (mood / 5.0) * maxHeight;
       final y = size.height - barHeight;
       
-      // Gradient colors based on mood
       final colors = _getMoodColors(mood);
       paint.shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -698,14 +711,12 @@ class MoodChartPainter extends CustomPainter {
         colors: colors,
       ).createShader(Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight));
       
-      // Draw bar with rounded corners
       final barRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight),
         const Radius.circular(6),
       );
       canvas.drawRRect(barRect, paint);
       
-      // Add to trend line path
       if (firstPoint) {
         path.moveTo(x, y + barHeight/2);
         shadowPath.moveTo(x, y + barHeight/2);
@@ -715,13 +726,12 @@ class MoodChartPainter extends CustomPainter {
         shadowPath.lineTo(x, y + barHeight/2);
       }
       
-      // Draw mood name on top of bar
       final moodName = _getMoodName(mood);
       final textPainter = TextPainter(
         text: TextSpan(
           text: moodName,
           style: const TextStyle(
-            color: Color(0xFF25424F),
+            color: Color(0xFF3C5C5A), // CHANGED TO MATCH HOME_PAGE
             fontSize: 8,
             fontWeight: FontWeight.bold,
           ),
@@ -735,16 +745,13 @@ class MoodChartPainter extends CustomPainter {
       );
     }
     
-    // Draw trend line shadow
     shadowPath.lineTo(shadowPath.getBounds().right, size.height);
     shadowPath.lineTo(shadowPath.getBounds().left, size.height);
     shadowPath.close();
     canvas.drawPath(shadowPath, shadowPaint);
     
-    // Draw trend line
     canvas.drawPath(path, linePaint);
     
-    // Draw trend line points
     for (int i = 0; i < moods.length; i++) {
       final mood = moods[i].clamp(0, 5);
       final x = (i + 0.5) * (size.width / moods.length);
@@ -762,7 +769,7 @@ class MoodChartPainter extends CustomPainter {
         Offset(x, y + barHeight/2),
         4,
         Paint()
-          ..color = const Color(0xFF25424F)
+          ..color = const Color(0xFF3C5C5A) // CHANGED TO MATCH HOME_PAGE
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );

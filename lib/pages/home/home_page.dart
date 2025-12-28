@@ -1,5 +1,8 @@
+// ========================================
+// HOME_PAGE.DART - COMPLETE CODE
+// ========================================
 import 'dart:async';
-import 'dart:io'; // for exit(0) (note: not supported on Flutter Web)
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -26,7 +29,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   late Animation<Offset> _overlayOffset;
   bool _isOverlayVisible = false;
 
-  // ✅ youtube_player_iframe controller
+  // youtube_player_iframe controller
   YoutubePlayerController? _overlayYoutubeController;
 
   // Track playback for slider + button states
@@ -63,9 +66,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
-  // ---------------------------------------------------------
-  // Video overlay controls (youtube_player_iframe)
-  // ---------------------------------------------------------
+  // Video overlay controls
   void _playVideo(String title, String subtitle, IconData icon, String videoId) {
     _ticker?.cancel();
     _overlayYoutubeController?.close();
@@ -88,7 +89,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
 
-    // Listen player state (play/pause)
     controller.listen((value) {
       if (!mounted) return;
       setState(() {
@@ -106,7 +106,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     _overlayController.forward();
 
-    // Poll time/duration (safe for web iframe)
     _ticker = Timer.periodic(const Duration(milliseconds: 300), (_) async {
       if (!mounted) return;
       try {
@@ -228,12 +227,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     icon: const Icon(Icons.menu, color: Colors.white),
                   ),
                 ),
-              const CircleAvatar(
-                    radius: 18,
-                    backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
-                  )
-
-                              ],
+                const CircleAvatar(
+                  radius: 18,
+                  backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
+                )
+              ],
             ),
             const SizedBox(height: 8),
             Text(
@@ -432,7 +430,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
                           const SizedBox(height: 16),
 
-                          // ✅ TITLE + ICON (THIS IS THE FIX)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: SizedBox(
@@ -537,73 +534,66 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
   }
-}
 
-// ---------------------------------------------------------
-// ⭐ DRAWER WIDGET
-// ---------------------------------------------------------
-// Replace the _buildAppDrawer function in home_page.dart with this:
-
-Widget _buildAppDrawer(BuildContext context) {
-  return Drawer(
-    child: ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        const DrawerHeader(
-          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
-          child: Text(
-            'InnerBloom',
-            style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
+  // DRAWER WIDGET
+  Widget _buildAppDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+            child: Text(
+              'InnerBloom',
+              style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.settings),
-          title: const Text('Settings'),
-          onTap: () {
-            Navigator.pop(context); // Close drawer first
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            );
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.help_outline),
-          title: const Text('Help & Support'),
-          onTap: () {
-            Navigator.pop(context); // Close drawer first
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const HelpSupportPage()),
-            );
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('Privacy Policy'),
-          onTap: () {
-            Navigator.pop(context); // Close drawer first
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-            );
-          },
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.exit_to_app, color: Colors.red),
-          title: const Text('Exit App', style: TextStyle(color: Colors.red)),
-          onTap: () {
-            // ⚠️ exit(0) not supported on Flutter Web (will do nothing / error)
-            exit(0);
-          },
-        ),
-      ],
-    ),
-  );
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('Help & Support'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpSupportPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Colors.red),
+            title: const Text('Exit App', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              exit(0);
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
-
-// ---------------------------------------------------------
 
 class _MoodChip extends StatelessWidget {
   const _MoodChip({

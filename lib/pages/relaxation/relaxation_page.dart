@@ -1,3 +1,7 @@
+// ========================================
+// RELAXATION_PAGE.DART - COMPLETE UPDATED CODE
+// ========================================
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -5,8 +9,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
+import '../drawer/settings_page.dart';
+import '../drawer/help_and_support_page.dart';
+import '../drawer/privacy_policy.dart';
 
-// ✅ CHANGE THIS PATH to your actual services file location
 import '../../services/relaxation_service.dart';
 
 class RelaxationPage extends StatefulWidget {
@@ -20,25 +26,21 @@ class RelaxationPage extends StatefulWidget {
 
 class _RelaxationPageState extends State<RelaxationPage>
     with SingleTickerProviderStateMixin {
-  int _navIndex = 2; // we are on Relax tab
+  int _navIndex = 2;
   int _selectedCategory = 0;
 
-  // ✅ API Result State
   String _relaxationText = '';
   bool _isLoadingRelaxation = false;
 
-  // Overlay animation and video player
   late AnimationController _overlayController;
   late Animation<Offset> _overlayOffset;
   bool _isOverlayVisible = false;
   YoutubePlayerController? _overlayYoutubeController;
 
-  // ✅ FIX: store selected item (avoid index out of range)
   _RelaxItem? _selectedItem;
 
   double _dragOffset = 0;
 
-  // ⭐ ScrollController for category list
   final ScrollController _categoryScrollController = ScrollController();
 
   final List<String> _categories = const [
@@ -50,7 +52,6 @@ class _RelaxationPageState extends State<RelaxationPage>
     'Self-love & confidence',
   ];
 
-  // ⭐ VIDEO LIST
   final List<_RelaxItem> _allItems = const [
     _RelaxItem(
       title: 'Ocean waves',
@@ -163,7 +164,6 @@ class _RelaxationPageState extends State<RelaxationPage>
     ),
   ];
 
-  // ⭐ FILTER FUNCTION
   List<_RelaxItem> get _filteredItems {
     if (_selectedCategory == 0) return _allItems;
     final categoryName = _categories[_selectedCategory];
@@ -181,7 +181,6 @@ class _RelaxationPageState extends State<RelaxationPage>
     _overlayOffset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
         .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
 
-    // ⭐ Set initial category if provided from HomePage
     if (widget.initialCategory != null) {
       final index = _categories.indexOf(widget.initialCategory!);
       if (index != -1) {
@@ -190,7 +189,6 @@ class _RelaxationPageState extends State<RelaxationPage>
     }
   }
 
-  // ⭐ Scroll to selected category chip
   void _scrollToCategory(int index) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_categoryScrollController.hasClients) return;
@@ -263,35 +261,33 @@ class _RelaxationPageState extends State<RelaxationPage>
   }
 
   void _playVideo(_RelaxItem item) {
-  // Close old controller safely
-  _overlayYoutubeController?.close();
-  _overlayYoutubeController = null;
+    _overlayYoutubeController?.close();
+    _overlayYoutubeController = null;
 
-  _selectedItem = item;
+    _selectedItem = item;
 
-  // Create new controller
-  final controller = YoutubePlayerController.fromVideoId(
-    videoId: item.videoId,
-    autoPlay: true,
-    params: const YoutubePlayerParams(
-      showControls: true,
-      showFullscreenButton: true,
-      strictRelatedVideos: true,
-      playsInline: true,
-      enableJavaScript: true,
-      mute: false,
-    ),
-  );
+    final controller = YoutubePlayerController.fromVideoId(
+      videoId: item.videoId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        strictRelatedVideos: true,
+        playsInline: true,
+        enableJavaScript: true,
+        mute: false,
+      ),
+    );
 
-  setState(() {
-    _overlayYoutubeController = controller;
-    _isOverlayVisible = true;
-    _relaxationText = '';
-    _isLoadingRelaxation = false;
-  });
+    setState(() {
+      _overlayYoutubeController = controller;
+      _isOverlayVisible = true;
+      _relaxationText = '';
+      _isLoadingRelaxation = false;
+    });
 
-  _overlayController.forward();
-}
+    _overlayController.forward();
+  }
 
   void _hideOverlay() {
     _overlayController.reverse().then((_) {
@@ -303,10 +299,9 @@ class _RelaxationPageState extends State<RelaxationPage>
         _isLoadingRelaxation = false;
         _selectedItem = null;
       });
-        _overlayYoutubeController?.pauseVideo();
-        _overlayYoutubeController?.close();
-        _overlayYoutubeController = null;
-
+      _overlayYoutubeController?.pauseVideo();
+      _overlayYoutubeController?.close();
+      _overlayYoutubeController = null;
     });
   }
 
@@ -350,8 +345,7 @@ class _RelaxationPageState extends State<RelaxationPage>
                         ),
                         const CircleAvatar(
                           radius: 18,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.person, color: Colors.white),
+                          backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
                         ),
                       ],
                     ),
@@ -394,7 +388,6 @@ class _RelaxationPageState extends State<RelaxationPage>
                               setState(() => _selectedCategory = idx);
                               _scrollToCategory(idx);
 
-                              // ✅ if overlay open and category changed, close overlay safely
                               if (_isOverlayVisible) _hideOverlay();
                             },
                             child: Container(
@@ -517,20 +510,39 @@ class _RelaxationPageState extends State<RelaxationPage>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          const SizedBox(height: 12),
+                          Container(
+                            width: 40,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(2.5),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
 
-                             // put the replacement HERE
-      _overlayYoutubeController == null
-          ? const Center(child: CircularProgressIndicator())
-          : YoutubePlayerScaffold(
-              controller: _overlayYoutubeController!,
-              builder: (context, player) => player,
-            ),
-
-      // (your title, description, close button etc stay below),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                height: 240,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFF3C5C5A), width: 2),
+                                ),
+                                child: _overlayYoutubeController == null
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : YoutubePlayerScaffold(
+                                        controller: _overlayYoutubeController!,
+                                        builder: (context, player) => player,
+                                      ),
+                              ),
+                            ),
+                          ),
 
                           const SizedBox(height: 20),
 
-                          // Button to call API + show result
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
@@ -580,7 +592,6 @@ class _RelaxationPageState extends State<RelaxationPage>
 
                           const SizedBox(height: 24),
 
-                          // title/subtitle + icon
                           if (currentItem != null)
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -630,43 +641,67 @@ class _RelaxationPageState extends State<RelaxationPage>
       ),
     );
   }
-}
 
-// Drawer Widget
-Widget _buildAppDrawer(BuildContext context) {
-  return Drawer(
-    child: ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        const DrawerHeader(
-          decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
-          child: Text(
-            'InnerBloom',
-            style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
+  // DRAWER WIDGET - MOVED INSIDE CLASS
+  Widget _buildAppDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
+            child: Text(
+              'InnerBloom',
+              style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        ListTile(leading: const Icon(Icons.settings), title: const Text('Settings'), onTap: () {}),
-        ListTile(leading: const Icon(Icons.help_outline), title: const Text('Help & Support'), onTap: () {}),
-        ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: const Text('Privacy Policy'), onTap: () {}),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.exit_to_app, color: Colors.red),
-          title: const Text('Exit App', style: TextStyle(color: Colors.red)),
-          onTap: () {
-            // ✅ prevent crashing on web
-            if (!kIsWeb) {
-              // ignore: avoid_print
-              // exit(0);
-            }
-            Navigator.pop(context);
-          },
-        ),
-      ],
-    ),
-  );
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('Help & Support'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpSupportPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Colors.red),
+            title: const Text('Exit App', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              exit(0);
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// ⭐ UPDATED _RelaxItem CLASS
 class _RelaxItem {
   final String title;
   final String subtitle;
