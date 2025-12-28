@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/_shared_background.dart';
 import 'mood_survey_page_one.dart';
 import '../model/mood_survey_data.dart';
 
@@ -15,34 +14,71 @@ class MoodTrackerScreen extends StatefulWidget {
 class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
   Mood? _selectedMood;
 
-  String _emojiFor(Mood m) {
+  IconData _iconFor(Mood m) {
     switch (m) {
-      case Mood.happy: return '😊';
-      case Mood.okay:  return '😐';
-      case Mood.sad:   return '😢';
-      case Mood.angry: return '😠';
-      case Mood.calm:  return '😌';
+      case Mood.happy: return Icons.sentiment_very_satisfied;
+      case Mood.okay: return Icons.sentiment_neutral;
+      case Mood.sad: return Icons.sentiment_dissatisfied;
+      case Mood.angry: return Icons.sentiment_very_dissatisfied;
+      case Mood.calm: return Icons.sentiment_satisfied;
     }
   }
 
-  Widget _moodEmoji(Mood mood, String label) {
+  String _labelFor(Mood m) {
+    switch (m) {
+      case Mood.happy: return 'Happy';
+      case Mood.okay: return 'Okay';
+      case Mood.sad: return 'Sad';
+      case Mood.angry: return 'Angry';
+      case Mood.calm: return 'Calm';
+    }
+  }
+
+  Widget _moodOption(Mood mood) {
     final sel = _selectedMood == mood;
     return GestureDetector(
       onTap: () => setState(() => _selectedMood = mood),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(width: 2, color: sel ? Colors.white : Colors.white70),
-              color: Colors.white.withOpacity(sel ? 0.1 : 0.05),
-            ),
-            child: Text(_emojiFor(mood), style: const TextStyle(fontSize: 36, color: Colors.white)),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: sel 
+              ? Colors.white.withOpacity(0.25)
+              : Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: sel 
+                ? Colors.white.withOpacity(0.6)
+                : Colors.white.withOpacity(0.15),
+            width: sel ? 2.5 : 1.5,
           ),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(color: sel ? Colors.white : Colors.white70)),
-        ],
+          boxShadow: sel ? [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.2),
+              blurRadius: 12,
+              spreadRadius: 1,
+            ),
+          ] : [],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _iconFor(mood),
+              color: Colors.white,
+              size: sel ? 48 : 44,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _labelFor(mood),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: sel ? 15 : 14,
+                fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -50,39 +86,114 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mood Tracker')),
-      body: SharedBg(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _moodEmoji(Mood.happy, 'Happy'),
-                  _moodEmoji(Mood.okay,  'Okay'),
-                  _moodEmoji(Mood.sad,   'Sad'),
-                  _moodEmoji(Mood.angry, 'Angry'),
-                  _moodEmoji(Mood.calm,  'Calm'),
-                ],
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MoodSurveyPageOne(data: MoodSurveyData()),
-                      ),
-                    );
-                  },
-                  child: const Text('Start Survey'),
+      appBar: AppBar(
+        //title: const Text('Mood Tracker'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: const Color(0xFF3C5C5A),
+        foregroundColor: Colors.white,
+      ),//
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                const Text(
+                  'HOW ARE YOU FEELING RIGHT NOW?',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-            ],  
+                const SizedBox(height: 8),
+                Text(
+                  'Select the mood that best describes you',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(child: _moodOption(Mood.happy)),
+                            const SizedBox(width: 12),
+                            Expanded(child: _moodOption(Mood.okay)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(child: _moodOption(Mood.sad)),
+                            const SizedBox(width: 12),
+                            Expanded(child: _moodOption(Mood.angry)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Center(
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.45,
+                            child: _moodOption(Mood.calm),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _selectedMood == null ? null : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MoodSurveyPageOne(data: MoodSurveyData()),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF3C5C5A),
+                      disabledBackgroundColor: Colors.white.withOpacity(0.3),
+                      disabledForegroundColor: Colors.white.withOpacity(0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'NEXT',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],  
+            ),
           ),
         ),
       ),

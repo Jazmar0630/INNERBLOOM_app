@@ -23,10 +23,8 @@ class _MoodResultPageState extends State<MoodResultPage>
 
   bool _isOverlayVisible = false;
 
-  // ✅ iframe controller
   YoutubePlayerController? _overlayYoutubeController;
 
-  // ✅ Polling state (safe for web)
   Timer? _ticker;
   bool _isPlayerReady = false;
   bool _isPlaying = false;
@@ -36,7 +34,6 @@ class _MoodResultPageState extends State<MoodResultPage>
   int _selectedItemIndex = 0;
   double _dragOffset = 0;
 
-  // ✅ Backend response state
   bool _isLoadingText = false;
   String _backendText = '';
 
@@ -86,7 +83,6 @@ class _MoodResultPageState extends State<MoodResultPage>
     _saveMoodToFirestore();
   }
 
-  // Save mood data to Firestore
   Future<void> _saveMoodToFirestore() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -110,9 +106,6 @@ class _MoodResultPageState extends State<MoodResultPage>
     }
   }
 
-  // -----------------------
-  // Simple scoring from q1..q6
-  // -----------------------
   double get _totalScore {
     final d = widget.data;
     return d.q1 + d.q2 + d.q3 + d.q4 + d.q5 + d.q6;
@@ -122,7 +115,7 @@ class _MoodResultPageState extends State<MoodResultPage>
 
   String get _headline {
     final a = _avgScore;
-    if (a >= 3.0) return "You’ve been under a lot of pressure lately.";
+    if (a >= 3.0) return "You've been under a lot of pressure lately.";
     if (a >= 2.0) return "You might be feeling a bit stressed or tired.";
     return "You seem fairly okay today — keep it up.";
   }
@@ -130,15 +123,14 @@ class _MoodResultPageState extends State<MoodResultPage>
   String get _subtext {
     final a = _avgScore;
     if (a >= 3.0) {
-      return "Try something gentle and calming. Small steps count, and you don’t need to handle everything at once.";
+      return "Try something gentle and calming. Small steps count, and you don't need to handle everything at once.";
     }
     if (a >= 2.0) {
       return "A short reset can help. Try breathing slowly, get some water, and take a quick break.";
     }
-    return "Still, it’s good to do a short relaxation to stay balanced and focused.";
+    return "Still, it's good to do a short relaxation to stay balanced and focused.";
   }
 
-  // ✅ Detect a mood label from survey
   String _detectedMoodLabel() {
     final a = _avgScore;
     if (a >= 3.0) return "overwhelmed";
@@ -147,7 +139,6 @@ class _MoodResultPageState extends State<MoodResultPage>
     return "calm";
   }
 
-  // ✅ Call backend to generate suggestion text
   Future<void> _fetchBackendTextForCurrentMood() async {
     final moodLabel = _detectedMoodLabel();
     final selectedTitle = _items[_selectedItemIndex].title;
@@ -178,38 +169,64 @@ class _MoodResultPageState extends State<MoodResultPage>
     final d = widget.data;
 
     Widget row(String label, double value) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 13)),
-          Text('${value.toStringAsFixed(0)} / 4',
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 14, color: Colors.white)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${value.toStringAsFixed(0)} / 4',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 16),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(top: 16, bottom: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Your Survey Summary',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
-          const SizedBox(height: 10),
-          row('Stress (Q1)', d.q1),
-          row('Mood (Q2)', d.q2),
-          row('Energy (Q3)', d.q3),
-          const Divider(),
-          row('Overwhelmed (Q4)', d.q4),
-          row('Sleep Issues (Q5)', d.q5),
-          row('Focus Difficulty (Q6)', d.q6),
+          const SizedBox(height: 16),
+          row('Stress Level', d.q1),
+          row('Sleep Quality', d.q2),
+          row('Focus Level', d.q3),
+          const SizedBox(height: 8),
+          Divider(color: Colors.white.withOpacity(0.3), thickness: 1),
+          const SizedBox(height: 8),
+          row('Overwhelmed', d.q4),
+          row('Sleep Issues', d.q5),
+          row('Distraction', d.q6),
         ],
       ),
     );
@@ -220,39 +237,47 @@ class _MoodResultPageState extends State<MoodResultPage>
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey[300]!),
+          color: const Color(0xFF3C5C5A).withOpacity(0.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
         ),
         child: _isLoadingText
             ? const Row(
                 children: [
                   SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   ),
-                  SizedBox(width: 10),
-                  Expanded(child: Text("Generating suggestion...")),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Generating suggestion...",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
                 ],
               )
             : Text(
                 _backendText.isEmpty
                     ? "Your mood-based suggestion will appear here."
                     : _backendText,
-                style: const TextStyle(fontSize: 13, height: 1.35),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: Colors.white,
+                ),
               ),
       ),
     );
   }
 
-  // -----------------------
-  // Video overlay controls (iframe)
-  // -----------------------
   void _playVideo(int index, String videoId) {
-    // cleanup previous
     _ticker?.cancel();
     _overlayYoutubeController?.close();
     _overlayYoutubeController = null;
@@ -289,10 +314,8 @@ class _MoodResultPageState extends State<MoodResultPage>
     });
 
     _overlayYoutubeController = c;
-
     _overlayController.forward();
 
-    // poll time + duration (safe)
     _ticker = Timer.periodic(const Duration(milliseconds: 300), (_) async {
       if (!mounted) return;
       try {
@@ -306,7 +329,6 @@ class _MoodResultPageState extends State<MoodResultPage>
       } catch (_) {}
     });
 
-    // ✅ Fetch backend response whenever user taps an item
     _fetchBackendTextForCurrentMood();
   }
 
@@ -366,15 +388,17 @@ class _MoodResultPageState extends State<MoodResultPage>
           if (_isOverlayVisible) _buildOverlay(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF3C5C5A),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF3C5C5A),
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const MoodAppreciationPage()),
           );
         },
-        child: const Icon(Icons.favorite, color: Colors.white),
+        icon: const Icon(Icons.favorite),
+        label: const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -389,71 +413,115 @@ class _MoodResultPageState extends State<MoodResultPage>
         ),
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Icon(Icons.menu, color: Colors.white),
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.white24,
-                    child: Icon(Icons.person, color: Colors.white),
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Text(
-                _headline,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+              const SizedBox(height: 20),
+              
+              // Result header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _subtext,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                  height: 1.35,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'YOUR RESULTS',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _headline,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _subtext,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "Mood: ${_detectedMoodLabel()}  •  Score: ${_avgScore.toStringAsFixed(1)} / 4",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "Detected mood: ${_detectedMoodLabel()}  •  Avg: ${_avgScore.toStringAsFixed(1)} / 4",
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
 
               _buildSurveySummaryCard(),
 
               const Text(
-                "Choose one (each opens a default video):",
+                "Recommended for you",
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 12),
-
-              Expanded(
-                child: ListView.separated(
-                  itemCount: _items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = _items[index];
-                    return _RelaxCard(
-                      item: item,
-                      onPlay: () => _playVideo(index, item.videoId),
-                    );
-                  },
+              const SizedBox(height: 8),
+              Text(
+                "Choose content to help you feel better",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final item = _items[index];
+                  return _RelaxCard(
+                    item: item,
+                    onPlay: () => _playVideo(index, item.videoId),
+                  );
+                },
               ),
             ],
           ),
@@ -516,7 +584,6 @@ class _MoodResultPageState extends State<MoodResultPage>
                           ),
                           const SizedBox(height: 18),
 
-                          // ✅ Video player (iframe)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: ClipRRect(
@@ -546,7 +613,6 @@ class _MoodResultPageState extends State<MoodResultPage>
 
                           const SizedBox(height: 18),
 
-                          // Title + subtitle
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
@@ -580,7 +646,6 @@ class _MoodResultPageState extends State<MoodResultPage>
 
                           const SizedBox(height: 18),
 
-                          // ✅ Seek bar (using polled pos/dur)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Column(
@@ -589,6 +654,7 @@ class _MoodResultPageState extends State<MoodResultPage>
                                   value: _posSec,
                                   min: 0,
                                   max: _durSec,
+                                  activeColor: const Color(0xFF3C5C5A),
                                   onChanged: !_isPlayerReady
                                       ? null
                                       : (value) {
@@ -618,7 +684,6 @@ class _MoodResultPageState extends State<MoodResultPage>
 
                           const SizedBox(height: 18),
 
-                          // Controls
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -694,23 +759,30 @@ class _RelaxCard extends StatelessWidget {
       onTap: onPlay,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: const Color(0xFF3C5C5A).withOpacity(0.1),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(item.icon, color: const Color(0xFF3C5C5A)),
+              child: Icon(item.icon, color: const Color(0xFF3C5C5A), size: 28),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,7 +793,7 @@ class _RelaxCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 15,
                       color: Colors.black87,
                     ),
                   ),
@@ -731,24 +803,25 @@ class _RelaxCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: Colors.black54,
+                      height: 1.3,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 12),
             Container(
-              width: 32,
-              height: 32,
+              width: 40,
+              height: 40,
               decoration: const BoxDecoration(
                 color: Color(0xFF3C5C5A),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.play_arrow,
-                size: 20,
+                size: 24,
                 color: Colors.white,
               ),
             ),
