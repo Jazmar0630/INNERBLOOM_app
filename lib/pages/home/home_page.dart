@@ -6,6 +6,9 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import '../relaxation/relaxation_page.dart';
+import '../drawer/settings_page.dart';
+import '../drawer/help_and_support_page.dart';
+import '../drawer/privacy_policy.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.displayName = 'User!'});
