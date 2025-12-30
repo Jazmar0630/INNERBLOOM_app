@@ -57,7 +57,7 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                   Text(
                     options[index],
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       color: isSelected ? Colors.white : Colors.white70,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -88,13 +88,13 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                 data.q4,
                 (v) => setState(() => data.q4 = v),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               _tickableBlock(
                 'I had trouble falling asleep or staying asleep.',
                 data.q5,
                 (v) => setState(() => data.q5 = v),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               _tickableBlock(
                 'I got distracted easily, even during simple tasks.',
                 data.q6,

@@ -65,7 +65,7 @@ class OnboardingIntroPage extends StatelessWidget {
                   'We wouldn\'t know you better than yourself. Help us get to know you by answering some simple questions.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.9),
+                    color:  Colors.white70,
                     fontSize: 14,
                     height: 1.4,
                   ),
