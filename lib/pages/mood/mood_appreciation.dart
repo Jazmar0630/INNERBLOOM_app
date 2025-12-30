@@ -1,8 +1,5 @@
- import 'package:flutter/material.dart';
- import '../home/home_page.dart';
-
-
- 
+import 'package:flutter/material.dart';
+import '../home/home_page.dart';
 
 class MoodAppreciationPage extends StatelessWidget {
   const MoodAppreciationPage({super.key});
@@ -27,42 +24,50 @@ class MoodAppreciationPage extends StatelessWidget {
                 children: [
                   const Spacer(),
 
-                   
-
                   const SizedBox(height: 20),
 
-                  // CIRCLE ICON (MOVED HERE)
-    Container(
-      width: 220,
-      height: 220,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
-    ),
+                  // CIRCLE ICON
+                  Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
+                  ),
 
-    const SizedBox(height: 32),
-
-                   
+                  const SizedBox(height: 32),
 
                   const SizedBox(height: 30),
 
-                  // Description text
-                  const Text(
-                    "Thank You for checking in. You're taken a brave step today. A small progress is still a progress.We're so proud of you!",
+                  // Description text with "Thank You" in bold
+                  RichText(
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                    text: const TextSpan(
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Color.fromARGB(255, 0, 0, 0),
+                        height: 1.4,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'Thank You',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        TextSpan(
+                          text: " for checking in. You're taken a brave step today. A small progress is still a progress. We're so proud of you!",
+                        ),
+                      ],
                     ),
                   ),
-                  
 
                   const Spacer(),
 
-                  // Back to home  Button
+                  // Back to home Button
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
@@ -79,7 +84,7 @@ class MoodAppreciationPage extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Back to home',
+                      'BACK TO HOME',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,
