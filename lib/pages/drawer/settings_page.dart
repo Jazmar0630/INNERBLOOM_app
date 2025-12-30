@@ -1,12 +1,10 @@
-// ========================================
-// SETTINGS_PAGE.DART - COMPLETE CODE
-// ========================================
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
 import '../user/user_page.dart';
 import '../home/home_page.dart';
+import '../widgets/app_drawer.dart';
 import 'help_and_support_page.dart';
 import 'privacy_policy.dart';
 
@@ -23,7 +21,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: _buildAppDrawer(context), // ADDED DRAWER
+      drawer: const AppDrawer(), // ADDED DRAWER
       extendBody: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -209,7 +207,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // DRAWER WIDGET
+  /*// DRAWER WIDGET
   Widget _buildAppDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
@@ -263,7 +261,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
-  }
+  }*/
 }
 
 class _SettingsTile extends StatelessWidget {

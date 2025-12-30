@@ -4,6 +4,7 @@ import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
 import '../user/user_page.dart';
 import '../home/home_page.dart';
+import '../widgets/app_drawer.dart';
 import 'settings_page.dart';
 import 'privacy_policy.dart';
 
@@ -27,7 +28,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: _buildAppDrawer(context), // ADDED DRAWER
+      drawer: const AppDrawer(), // ADDED DRAWER
       extendBody: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -222,7 +223,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
     );
   }
 
-  // DRAWER WIDGET
+  /*// DRAWER WIDGET
   Widget _buildAppDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
@@ -276,7 +277,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
         ],
       ),
     );
-  }
+  }*/
 }
 
 class _FAQTile extends StatefulWidget {

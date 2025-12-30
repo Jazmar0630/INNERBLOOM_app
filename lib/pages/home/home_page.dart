@@ -6,6 +6,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import '../relaxation/relaxation_page.dart';
+import '../widgets/app_drawer.dart';
 import '../drawer/settings_page.dart';
 import '../drawer/help_and_support_page.dart';
 import '../drawer/privacy_policy.dart';
@@ -163,7 +164,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      drawer: _buildAppDrawer(context),
+      drawer: const AppDrawer(),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -532,7 +533,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
   }
 
-  // DRAWER WIDGET
+  /*// DRAWER WIDGET
   Widget _buildAppDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
@@ -589,7 +590,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ],
       ),
     );
-  }
+  }*/
 }
 
 class _MoodChip extends StatelessWidget {

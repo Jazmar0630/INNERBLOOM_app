@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
+import '../widgets/app_drawer.dart';
 import '../drawer/settings_page.dart';
 import '../drawer/help_and_support_page.dart';
 import '../drawer/privacy_policy.dart';
@@ -168,7 +169,7 @@ class _UserPageState extends State<UserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      drawer: _buildAppDrawer(context),
+      drawer: const AppDrawer(),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -564,7 +565,7 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
-  // DRAWER WIDGET - MOVED INSIDE CLASS
+  /*// DRAWER WIDGET - MOVED INSIDE CLASS
   Widget _buildAppDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
@@ -623,7 +624,7 @@ class _UserPageState extends State<UserPage> {
         ],
       ),
     );
-  }
+  }*/
 }
 
 // Day bubble widget
