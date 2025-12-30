@@ -107,13 +107,37 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Back'),
+                      child: const Text(
+                        'BACK',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF3C5C5A),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 4,
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -122,7 +146,14 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                           ),
                         );
                       },
-                      child: const Text('Finish'),
+                      child: const Text(
+                        'FINISH',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
                     ),
                   ),
                 ],

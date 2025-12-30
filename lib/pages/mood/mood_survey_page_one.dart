@@ -89,14 +89,30 @@ class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
               const Spacer(),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(  
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF3C5C5A),
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => MoodSurveyPageTwo(data: widget.data)),
                     );
                   },
-                  child: const Text('Next'),
+                  child: const Text(
+                    'NEXT',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
                 ),
               ),
             ],
