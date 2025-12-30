@@ -32,8 +32,8 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
               child: Column(
                 children: [
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isSelected ? Colors.white : Colors.transparent,
@@ -46,18 +46,18 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                       child: Text(
                         (index + 1).toString(),
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: isSelected ? const Color(0xFF25424F) : Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     options[index],
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: isSelected ? Colors.white : Colors.white70,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -67,7 +67,6 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
             );
           }),
         ),
-        const SizedBox(height: 24),
       ],
     );
   }
@@ -89,11 +88,13 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
                 data.q4,
                 (v) => setState(() => data.q4 = v),
               ),
+              const SizedBox(height: 32),
               _tickableBlock(
                 'I had trouble falling asleep or staying asleep.',
                 data.q5,
                 (v) => setState(() => data.q5 = v),
               ),
+              const SizedBox(height: 32),
               _tickableBlock(
                 'I got distracted easily, even during simple tasks.',
                 data.q6,
