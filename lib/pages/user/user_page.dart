@@ -26,6 +26,8 @@ class _UserPageState extends State<UserPage> {
   StreamSubscription<User?>? _authSub;
   String? _initError;
   String _selectedPeriod = 'Weekly';
+  bool _isCheckedIn = false;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -59,6 +61,7 @@ class _UserPageState extends State<UserPage> {
         'activeDays.$today': true,
         'lastActiveAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      setState(() => _isCheckedIn = true);
     } catch (e) {
       // Silent fail
     }
@@ -76,7 +79,7 @@ class _UserPageState extends State<UserPage> {
   }
 
   Future<void> _markTodayActive() async {
-    if (_uid == null) return;
+    if (_uid == null || _isCheckedIn) return;
 
     final today = _weekdayKey(DateTime.now());
 
@@ -85,6 +88,7 @@ class _UserPageState extends State<UserPage> {
         'activeDays.$today': true,
         'lastActiveAt': FieldValue.serverTimestamp(),
       });
+      setState(() => _isCheckedIn = true);
     } catch (e) {
       await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
         'username': 'user',
@@ -100,6 +104,7 @@ class _UserPageState extends State<UserPage> {
         },
         'lastActiveAt': FieldValue.serverTimestamp(),
       });
+      setState(() => _isCheckedIn = true);
     }
   }
 
@@ -175,7 +180,7 @@ class _UserPageState extends State<UserPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)], // CHANGED TO MATCH HOME_PAGE
+            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
           ),
         ),
         child: SafeArea(
@@ -205,7 +210,7 @@ class _UserPageState extends State<UserPage> {
                         child: Icon(
                           Icons.person,
                           size: 48,
-                          color: Color(0xFF3C5C5A), // CHANGED TO MATCH HOME_PAGE
+                          color: Color(0xFF3C5C5A),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -248,108 +253,133 @@ class _UserPageState extends State<UserPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () async {
-                    if (_uid == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please login first')),
-                      );
-                      return;
-                    }
-                    try {
-                      await _markTodayActive();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Checked in for today ✅')),
-                      );
-                    } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Check-in failed: $e')),
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+                MouseRegion(
+                  onEnter: (_) => setState(() => _isHovered = !_isCheckedIn),
+                  onExit: (_) => setState(() => _isHovered = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Daily check in',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
+                      onTap: _isCheckedIn ? null : () async {
+                        if (_uid == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please login first')),
+                          );
+                          return;
+                        }
+                        try {
+                          await _markTodayActive();
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Checked in for today ✅')),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Check-in failed: $e')),
+                          );
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: _isCheckedIn ? Colors.white.withOpacity(0.7) : Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: _isHovered ? [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ] : null,
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Check in daily and track your progress everyday!',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        if (_uid == null)
-                          const Text(
-                            'Please login first',
-                            style: TextStyle(color: Colors.black54),
-                          )
-                        else
-                          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: _userDocStream(),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasError) {
-                                return Text(
-                                  'Firestore error: ${snapshot.error}',
-                                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                                );
-                              }
-                              if (!snapshot.hasData) {
-                                return Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: List.generate(7, (i) => 
-                                    _buildDayBubble(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i])
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Daily check in',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                    color: _isCheckedIn ? Colors.black54 : Colors.black87,
                                   ),
-                                );
-                              }
-                              final doc = snapshot.data!;
-                              if (!doc.exists) {
-                                return const Text(
-                                  'No user doc found',
-                                  style: TextStyle(color: Colors.black54, fontSize: 12),
-                                );
-                              }
-                              final data = doc.data() ?? {};
-                              final raw = data['activeDays'];
-                              final Map<String, bool> activeDays = (raw is Map)
-                                  ? Map<String, bool>.from(
-                                      raw.map((k, v) => MapEntry(k.toString(), v == true)),
-                                    )
-                                  : {};
-                              bool isActive(String key) => activeDays[key] == true;
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  _buildDayBubble('Mon', isCompleted: isActive('mon')),
-                                  _buildDayBubble('Tue', isCompleted: isActive('tue')),
-                                  _buildDayBubble('Wed', isCompleted: isActive('wed')),
-                                  _buildDayBubble('Thu', isCompleted: isActive('thu')),
-                                  _buildDayBubble('Fri', isCompleted: isActive('fri')),
-                                  _buildDayBubble('Sat', isCompleted: isActive('sat')),
-                                  _buildDayBubble('Sun', isCompleted: isActive('sun')),
+                                ),
+                                if (_isCheckedIn) ...[
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
                                 ],
-                              );
-                            },
-                          ),
-                      ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _isCheckedIn 
+                                ? 'Great! You\'ve checked in today!'
+                                : 'Check in daily and track your progress everyday!',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _isCheckedIn ? Colors.black38 : Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (_uid == null)
+                              const Text(
+                                'Please login first',
+                                style: TextStyle(color: Colors.black54),
+                              )
+                            else
+                              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                                stream: _userDocStream(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasError) {
+                                    return Text(
+                                      'Firestore error: ${snapshot.error}',
+                                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                                    );
+                                  }
+                                  if (!snapshot.hasData) {
+                                    return Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: List.generate(7, (i) => 
+                                        _buildDayBubble(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i])
+                                      ),
+                                    );
+                                  }
+                                  final doc = snapshot.data!;
+                                  if (!doc.exists) {
+                                    return const Text(
+                                      'No user doc found',
+                                      style: TextStyle(color: Colors.black54, fontSize: 12),
+                                    );
+                                  }
+                                  final data = doc.data() ?? {};
+                                  final raw = data['activeDays'];
+                                  final Map<String, bool> activeDays = (raw is Map)
+                                      ? Map<String, bool>.from(
+                                          raw.map((k, v) => MapEntry(k.toString(), v == true)),
+                                        )
+                                      : {};
+                                  bool isActive(String key) => activeDays[key] == true;
+                                  return Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildDayBubble('Mon', isCompleted: isActive('mon')),
+                                      _buildDayBubble('Tue', isCompleted: isActive('tue')),
+                                      _buildDayBubble('Wed', isCompleted: isActive('wed')),
+                                      _buildDayBubble('Thu', isCompleted: isActive('thu')),
+                                      _buildDayBubble('Fri', isCompleted: isActive('fri')),
+                                      _buildDayBubble('Sat', isCompleted: isActive('sat')),
+                                      _buildDayBubble('Sun', isCompleted: isActive('sun')),
+                                    ],
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -470,7 +500,7 @@ class _UserPageState extends State<UserPage> {
                                   if (!snapshot.hasData || snapshot.connectionState == ConnectionState.waiting) {
                                     return const Center(
                                       child: CircularProgressIndicator(
-                                        color: Color(0xFF3C5C5A), // CHANGED TO MATCH HOME_PAGE
+                                        color: Color(0xFF3C5C5A),
                                         strokeWidth: 2,
                                       ),
                                     );
@@ -564,67 +594,6 @@ class _UserPageState extends State<UserPage> {
       ),
     );
   }
-
-  /*// DRAWER WIDGET - MOVED INSIDE CLASS
-  Widget _buildAppDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
-            child: Text(
-              'InnerBloom',
-              style: TextStyle(
-                fontSize: 22,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Help & Support'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HelpSupportPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.exit_to_app, color: Colors.red),
-            title: const Text('Exit App', style: TextStyle(color: Colors.red)),
-            onTap: () => exit(0),
-          ),
-        ],
-      ),
-    );
-  }*/
 }
 
 // Day bubble widget
@@ -637,8 +606,8 @@ Widget _buildDayBubble(String label, {bool isCompleted = false}) {
         height: 26,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isCompleted ? const Color(0xFF3C5C5A) : Colors.white, // CHANGED TO MATCH HOME_PAGE
-          border: Border.all(color: const Color(0xFF3C5C5A)), // CHANGED TO MATCH HOME_PAGE
+          color: isCompleted ? const Color(0xFF3C5C5A) : Colors.white,
+          border: Border.all(color: const Color(0xFF3C5C5A)),
         ),
         child: isCompleted
             ? const Icon(Icons.check, size: 16, color: Colors.white)
@@ -683,13 +652,13 @@ class MoodChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     
     final linePaint = Paint()
-      ..color = const Color(0xFF3C5C5A).withOpacity(0.8) // CHANGED TO MATCH HOME_PAGE
+      ..color = const Color(0xFF3C5C5A).withOpacity(0.8)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     
     final shadowPaint = Paint()
-      ..color = const Color(0xFF3C5C5A).withOpacity(0.1) // CHANGED TO MATCH HOME_PAGE
+      ..color = const Color(0xFF3C5C5A).withOpacity(0.1)
       ..style = PaintingStyle.fill;
     
     final barWidth = size.width / (moods.length * 1.5);
@@ -732,7 +701,7 @@ class MoodChartPainter extends CustomPainter {
         text: TextSpan(
           text: moodName,
           style: const TextStyle(
-            color: Color(0xFF3C5C5A), // CHANGED TO MATCH HOME_PAGE
+            color: Color(0xFF3C5C5A),
             fontSize: 8,
             fontWeight: FontWeight.bold,
           ),
@@ -770,7 +739,7 @@ class MoodChartPainter extends CustomPainter {
         Offset(x, y + barHeight/2),
         4,
         Paint()
-          ..color = const Color(0xFF3C5C5A) // CHANGED TO MATCH HOME_PAGE
+          ..color = const Color(0xFF3C5C5A)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );
