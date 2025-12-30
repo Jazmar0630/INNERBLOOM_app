@@ -48,7 +48,7 @@ class MoodAppreciationPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w400,
-                        color: Color.fromARGB(255, 0, 0, 0),
+                        color: Colors.white,
                         height: 1.4,
                       ),
                       children: [
