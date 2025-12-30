@@ -12,7 +12,9 @@ class MoodSurveyPageTwo extends StatefulWidget {
 }
 
 class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
-  Widget _sliderBlock(String question, double value, ValueChanged<double> onChanged) {
+  Widget _tickableBlock(String question, double value, ValueChanged<double> onChanged) {
+    const options = ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'];
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -20,25 +22,52 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
           question,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
         ),
-        Slider(
-          value: value,
-          min: 0,
-          max: 4,
-          divisions: 4,
-          label: value.round().toString(),
-          onChanged: onChanged,
-        ),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('Never', style: TextStyle(color: Colors.white)),
-            Text('Rarely', style: TextStyle(color: Colors.white)),
-            Text('Sometimes', style: TextStyle(color: Colors.white)),
-            Text('Often', style: TextStyle(color: Colors.white)),
-            Text('Always', style: TextStyle(color: Colors.white)),
-          ],
+          children: List.generate(5, (index) {
+            final isSelected = value.round() == index;
+            return GestureDetector(
+              onTap: () => onChanged(index.toDouble()),
+              child: Column(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        (index + 1).toString(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? const Color(0xFF25424F) : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    options[index],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -55,17 +84,17 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _sliderBlock(
+              _tickableBlock(
                 'I feel overwhelmed by tasks or responsibilities today.',
                 data.q4,
                 (v) => setState(() => data.q4 = v),
               ),
-              _sliderBlock(
+              _tickableBlock(
                 'I had trouble falling asleep or staying asleep.',
                 data.q5,
                 (v) => setState(() => data.q5 = v),
               ),
-              _sliderBlock(
+              _tickableBlock(
                 'I got distracted easily, even during simple tasks.',
                 data.q6,
                 (v) => setState(() => data.q6 = v),

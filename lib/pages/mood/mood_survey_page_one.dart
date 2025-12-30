@@ -12,7 +12,9 @@ class MoodSurveyPageOne extends StatefulWidget {
 }
 
 class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
-  Widget _sliderBlock(String question, double value, ValueChanged<double> onChanged) {
+  Widget _tickableBlock(String question, double value, ValueChanged<double> onChanged) {
+    const options = ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'];
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -20,18 +22,52 @@ class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
           question,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
         ),
-        Slider(value: value, min: 0, max: 4, divisions: 4, label: value.round().toString(), onChanged: onChanged),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('Never', style: TextStyle(color: Colors.white)),
-            Text('Rarely', style: TextStyle(color: Colors.white)),
-            Text('Sometimes', style: TextStyle(color: Colors.white)),
-            Text('Often', style: TextStyle(color: Colors.white)),
-            Text('Always', style: TextStyle(color: Colors.white)),
-          ],
+          children: List.generate(5, (index) {
+            final isSelected = value.round() == index;
+            return GestureDetector(
+              onTap: () => onChanged(index.toDouble()),
+              child: Column(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        (index + 1).toString(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? const Color(0xFF25424F) : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    options[index],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -45,9 +81,9 @@ class _MoodSurveyPageOneState extends State<MoodSurveyPageOne> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              _sliderBlock('How stressed do you feel?', widget.data.q1, (v) => setState(() => widget.data.q1 = v)),
-              _sliderBlock('How well did you sleep?', widget.data.q2, (v) => setState(() => widget.data.q2 = v)),
-              _sliderBlock('How focused are you today?', widget.data.q3, (v) => setState(() => widget.data.q3 = v)),
+              _tickableBlock('How stressed do you feel?', widget.data.q1, (v) => setState(() => widget.data.q1 = v)),
+              _tickableBlock('How well did you sleep?', widget.data.q2, (v) => setState(() => widget.data.q2 = v)),
+              _tickableBlock('How focused are you today?', widget.data.q3, (v) => setState(() => widget.data.q3 = v)),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
