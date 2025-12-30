@@ -1,11 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../mood/mood_appreciation.dart';
 import '../model/mood_survey_data.dart';
 import '../../services/mood_result_service.dart';
+import '../widgets/video_player_overlay.dart'; // ADD THIS IMPORT
 
 class MoodResultPage extends StatefulWidget {
   final MoodSurveyData data;
@@ -16,26 +15,8 @@ class MoodResultPage extends StatefulWidget {
   State<MoodResultPage> createState() => _MoodResultPageState();
 }
 
-class _MoodResultPageState extends State<MoodResultPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _overlayController;
-  late Animation<Offset> _overlayOffset;
-
-  bool _isOverlayVisible = false;
-
-  YoutubePlayerController? _overlayYoutubeController;
-
-  Timer? _ticker;
-  bool _isPlayerReady = false;
-  bool _isPlaying = false;
-  double _posSec = 0;
-  double _durSec = 1;
-
+class _MoodResultPageState extends State<MoodResultPage> {
   int _selectedItemIndex = 0;
-  double _dragOffset = 0;
-
-  bool _isLoadingText = false;
-  String _backendText = '';
 
   final List<_RelaxItem> _items = const [
     _RelaxItem(
@@ -73,13 +54,6 @@ class _MoodResultPageState extends State<MoodResultPage>
   @override
   void initState() {
     super.initState();
-    _overlayController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _overlayOffset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _overlayController, curve: Curves.easeOut));
-    
     _saveMoodToFirestore();
   }
 
@@ -137,32 +111,6 @@ class _MoodResultPageState extends State<MoodResultPage>
     if (a >= 2.0) return "stressed";
     if (a >= 1.2) return "tired";
     return "calm";
-  }
-
-  Future<void> _fetchBackendTextForCurrentMood() async {
-    final moodLabel = _detectedMoodLabel();
-    final selectedTitle = _items[_selectedItemIndex].title;
-    final moodPayload = '$moodLabel | content: $selectedTitle';
-
-    setState(() {
-      _isLoadingText = true;
-      _backendText = '';
-    });
-
-    try {
-      final text = await MoodResultService.getSuggestion(mood: moodPayload);
-      if (!mounted) return;
-      setState(() {
-        _backendText = text;
-        _isLoadingText = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _backendText = 'Error: $e';
-        _isLoadingText = false;
-      });
-    }
   }
 
   Widget _buildSurveySummaryCard() {
@@ -232,161 +180,154 @@ class _MoodResultPageState extends State<MoodResultPage>
     );
   }
 
-  Widget _buildBackendSuggestionCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF3C5C5A).withOpacity(0.2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.3)),
-        ),
-        child: _isLoadingText
-            ? const Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Generating suggestion...",
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                _backendText.isEmpty
-                    ? "Your mood-based suggestion will appear here."
-                    : _backendText,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: Colors.white,
-                ),
-              ),
-      ),
-    );
-  }
-
   void _playVideo(int index, String videoId) {
-    _ticker?.cancel();
-    _overlayYoutubeController?.close();
-    _overlayYoutubeController = null;
-
     setState(() {
       _selectedItemIndex = index;
-      _isOverlayVisible = true;
-      _backendText = '';
-      _isLoadingText = false;
-      _isPlayerReady = false;
-      _isPlaying = false;
-      _posSec = 0;
-      _durSec = 1;
     });
 
-    final c = YoutubePlayerController.fromVideoId(
+    final moodLabel = _detectedMoodLabel();
+    final selectedTitle = _items[index].title;
+
+    VideoPlayerOverlay.show(
+      context: context,
       videoId: videoId,
-      autoPlay: true,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-        strictRelatedVideos: true,
-        playsInline: true,
-        enableJavaScript: true,
-        mute: false,
-      ),
+      title: _items[index].title,
+      subtitle: _items[index].subtitle,
+      icon: _items[index].icon,
+      onGenerateText: () async {
+        final moodPayload = '$moodLabel | content: $selectedTitle';
+        return await MoodResultService.getSuggestion(mood: moodPayload);
+      },
     );
-
-    c.listen((value) {
-      if (!mounted) return;
-      setState(() {
-        _isPlaying = value.playerState == PlayerState.playing;
-      });
-    });
-
-    _overlayYoutubeController = c;
-    _overlayController.forward();
-
-    _ticker = Timer.periodic(const Duration(milliseconds: 300), (_) async {
-      if (!mounted) return;
-      try {
-        final pos = await c.currentTime;
-        final dur = await c.duration;
-        setState(() {
-          _posSec = (pos ?? 0).toDouble();
-          _durSec = ((dur ?? 1).toDouble()).clamp(1, double.infinity);
-          _isPlayerReady = true;
-        });
-      } catch (_) {}
-    });
-
-    _fetchBackendTextForCurrentMood();
-  }
-
-  void _hideOverlay() {
-    _overlayController.reverse().then((_) {
-      if (!mounted) return;
-      setState(() {
-        _isOverlayVisible = false;
-        _dragOffset = 0;
-      });
-      _ticker?.cancel();
-      _ticker = null;
-
-      _overlayYoutubeController?.pauseVideo();
-      _overlayYoutubeController?.close();
-      _overlayYoutubeController = null;
-    });
-  }
-
-  void _toggleOverlayPlayPause() {
-    if (!_isPlayerReady || _overlayYoutubeController == null) return;
-    if (_isPlaying) {
-      _overlayYoutubeController!.pauseVideo();
-    } else {
-      _overlayYoutubeController!.playVideo();
-    }
-  }
-
-  void _seekOverlayRelative(int seconds) {
-    if (!_isPlayerReady || _overlayYoutubeController == null) return;
-    final next = (_posSec + seconds).clamp(0, _durSec);
-    _overlayYoutubeController!.seekTo(seconds: next.toDouble(), allowSeekAhead: true);
-  }
-
-  String _formatSeconds(double sec) {
-    final s = sec.isFinite ? sec.round() : 0;
-    final m = (s ~/ 60).toString().padLeft(2, '0');
-    final r = (s % 60).toString().padLeft(2, '0');
-    return '$m:$r';
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    _overlayYoutubeController?.close();
-    _overlayController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: Stack(
-        children: [
-          _buildMainContent(),
-          if (_isOverlayVisible) _buildOverlay(),
-        ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                // Result header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'YOUR RESULTS',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _headline,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _subtext,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.9),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "Mood: ${_detectedMoodLabel()}  •  Score: ${_avgScore.toStringAsFixed(1)} / 4",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                _buildSurveySummaryCard(),
+
+                const Text(
+                  "Recommended for you",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Choose content to help you feel better",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = _items[index];
+                    return _RelaxCard(
+                      item: item,
+                      onPlay: () => _playVideo(index, item.videoId),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.white,
@@ -399,332 +340,6 @@ class _MoodResultPageState extends State<MoodResultPage>
         },
         icon: const Icon(Icons.favorite),
         label: const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
-    );
-  }
-
-  Widget _buildMainContent() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
-        ),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              // Result header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'YOUR RESULTS',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _headline,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _subtext,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        "Mood: ${_detectedMoodLabel()}  •  Score: ${_avgScore.toStringAsFixed(1)} / 4",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              _buildSurveySummaryCard(),
-
-              const Text(
-                "Recommended for you",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Choose content to help you feel better",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = _items[index];
-                  return _RelaxCard(
-                    item: item,
-                    onPlay: () => _playVideo(index, item.videoId),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOverlay() {
-    final controller = _overlayYoutubeController;
-    final sliderValue = _posSec.clamp(0, _durSec);
-
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: _hideOverlay,
-        child: Container(
-          color: Colors.black26,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: SlideTransition(
-              position: _overlayOffset,
-              child: GestureDetector(
-                onTap: () {},
-                onVerticalDragUpdate: (details) {
-                  setState(() {
-                    _dragOffset += details.delta.dy;
-                  });
-                },
-                onVerticalDragEnd: (details) {
-                  if (_dragOffset > 100) {
-                    _hideOverlay();
-                  } else {
-                    setState(() {
-                      _dragOffset = 0;
-                    });
-                  }
-                },
-                child: Transform.translate(
-                  offset: Offset(0, _dragOffset),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width - 32,
-                    height: MediaQuery.of(context).size.height * 0.84,
-                    margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 12),
-                          Container(
-                            width: 40,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(2.5),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                height: 240,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFF3C5C5A),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: controller == null
-                                    ? const Center(child: CircularProgressIndicator())
-                                    : YoutubePlayerScaffold(
-                                        controller: controller,
-                                        builder: (context, player) => player,
-                                      ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          _buildBackendSuggestionCard(),
-
-                          const SizedBox(height: 18),
-
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _items[_selectedItemIndex].title,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _items[_selectedItemIndex].subtitle,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.black54,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 18),
-
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                Slider(
-                                  value: _posSec,
-                                  min: 0,
-                                  max: _durSec,
-                                  activeColor: const Color(0xFF3C5C5A),
-                                  onChanged: !_isPlayerReady
-                                      ? null
-                                      : (value) {
-                                          setState(() => _posSec = value);
-                                          controller?.seekTo(
-                                            seconds: value,
-                                            allowSeekAhead: true,
-                                          );
-                                        },
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _formatSeconds(_posSec),
-                                      style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                    ),
-                                    Text(
-                                      _formatSeconds(_durSec),
-                                      style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 18),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              IconButton(
-                                iconSize: 40,
-                                icon: const Icon(Icons.replay_10, color: Color(0xFF7A9BA3)),
-                                onPressed: !_isPlayerReady ? null : () => _seekOverlayRelative(-10),
-                              ),
-                              const SizedBox(width: 16),
-                              Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF3C5C5A),
-                                ),
-                                child: IconButton(
-                                  iconSize: 36,
-                                  icon: Icon(
-                                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: _toggleOverlayPlayPause,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              IconButton(
-                                iconSize: 40,
-                                icon: const Icon(Icons.forward_10, color: Color(0xFF7A9BA3)),
-                                onPressed: !_isPlayerReady ? null : () => _seekOverlayRelative(10),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
