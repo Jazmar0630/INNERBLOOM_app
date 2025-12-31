@@ -174,8 +174,8 @@ class _UserPageState extends State<UserPage> {
         .collection('users')
         .doc(_uid!)
         .collection('moods')
-        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-        .orderBy('createdAt', descending: false)
+        .where('createdAtLocal', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+        .orderBy('createdAtLocal', descending: false)
         .snapshots();
   }
 

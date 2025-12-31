@@ -77,6 +77,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
         'totalScore': _totalScore,
         'detectedMood': _detectedMoodLabel(),
         'createdAt': FieldValue.serverTimestamp(),
+        'createAtLocal':DateTime.now()
       });
     } catch (e) {
       debugPrint('Failed to save mood: $e');
