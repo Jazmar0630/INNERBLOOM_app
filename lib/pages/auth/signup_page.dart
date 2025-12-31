@@ -13,6 +13,7 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _username = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -30,7 +31,7 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  // ✅ default map that your UserPage expects
+  // ✅ default map for your UserPage "activeDays"
   Map<String, bool> _defaultActiveDays() => {
         'mon': false,
         'tue': false,
@@ -41,52 +42,92 @@ class _SignUpPageState extends State<SignUpPage> {
         'sun': false,
       };
 
+  String? _validateUsername(String? v) {
+    final s = (v ?? '').trim();
+    if (s.isEmpty) return 'Enter a username';
+    if (s.length < 3) return 'Username too short (min 3)';
+    if (s.length > 20) return 'Username too long (max 20)';
+    // allow letters, numbers, underscore, dot
+    final ok = RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(s);
+    if (!ok) return 'Use only letters, numbers, . or _';
+    return null;
+  }
+
+  String? _validateEmail(String? v) {
+    final s = (v ?? '').trim();
+    if (s.isEmpty) return 'Enter an email';
+    final ok = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(s);
+    if (!ok) return 'Enter a valid email';
+    return null;
+  }
+
+  String? _validatePassword(String? v) {
+    final s = (v ?? '');
+    if (s.length < 6) return 'Min 6 characters';
+    return null;
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!agreeToPolicy) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please agree to privacy policy")),
-      );
+      _toast("Please agree to privacy policy");
       return;
     }
+
+    final username = _username.text.trim();
+    final email = _email.text.trim();
+    final password = _password.text.trim();
 
     setState(() => _loading = true);
 
     try {
       // 1) Create user in Firebase Auth
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _email.text.trim(),
-        password: _password.text.trim(),
+        email: email,
+        password: password,
       );
 
-      final uid = cred.user!.uid;
+      final user = cred.user;
+      if (user == null) throw Exception("User creation failed");
 
-      // 2) Create user document in Firestore (users/{uid})
+      final uid = user.uid;
+
+      // ✅ 2) Update Auth profile displayName (useful for quick reads)
+      await user.updateDisplayName(username);
+
+      // 3) Create user document in Firestore (users/{uid})
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
-        'username': _username.text.trim(),
-        'email': _email.text.trim(),
+
+        // ✅ store both to avoid mismatch across pages
+        'name': username,       // some pages might read "name"
+        'username': username,   // some pages might read "username"
+
+        'email': email,
+        'role': 'user',
+        'photoUrl': null,
+
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
 
-        // ✅ IMPORTANT: must exist + have all days
+        // ✅ IMPORTANT: must exist + have all days for your daily check-in
         'activeDays': _defaultActiveDays(),
-
-        // optional
         'lastActiveAt': null,
       }, SetOptions(merge: true));
 
       if (!mounted) return;
 
-      // Go to login page (or you can go straight to HomePage)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account created ✅ Please login")),
-      );
+      _toast("Account created ✅ Please login");
     } on FirebaseAuthException catch (e) {
       String msg = "Signup failed";
 
@@ -99,12 +140,10 @@ class _SignUpPageState extends State<SignUpPage> {
       if (e.code == 'network-request-failed') msg = "No internet connection";
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    } catch (_) {
+      _toast(msg);
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signup failed")),
-      );
+      _toast("Signup failed");
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -152,9 +191,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   // Username
                   TextFormField(
                     controller: _username,
+                    textInputAction: TextInputAction.next,
                     decoration: _fieldDecoration('Username'),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Enter a username' : null,
+                    validator: _validateUsername,
                   ),
                   const SizedBox(height: 16),
 
@@ -162,12 +201,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextFormField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     decoration: _fieldDecoration('Email'),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Enter an email';
-                      if (!v.contains('@')) return 'Enter a valid email';
-                      return null;
-                    },
+                    validator: _validateEmail,
                   ),
                   const SizedBox(height: 16),
 
@@ -175,9 +211,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextFormField(
                     controller: _password,
                     obscureText: true,
+                    textInputAction: TextInputAction.next,
                     decoration: _fieldDecoration('Password'),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                    validator: _validatePassword,
                   ),
                   const SizedBox(height: 16),
 
@@ -185,12 +221,14 @@ class _SignUpPageState extends State<SignUpPage> {
                   TextFormField(
                     controller: _confirmPassword,
                     obscureText: true,
+                    textInputAction: TextInputAction.done,
                     decoration: _fieldDecoration('Confirm Password'),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Confirm your password';
+                      if ((v ?? '').isEmpty) return 'Confirm your password';
                       if (v != _password.text) return 'Passwords do not match';
                       return null;
                     },
+                    onFieldSubmitted: (_) => _loading ? null : _signup(),
                   ),
                   const SizedBox(height: 16),
 
@@ -199,8 +237,9 @@ class _SignUpPageState extends State<SignUpPage> {
                     children: [
                       Checkbox(
                         value: agreeToPolicy,
-                        onChanged: (v) =>
-                            setState(() => agreeToPolicy = v ?? false),
+                        onChanged: _loading
+                            ? null
+                            : (v) => setState(() => agreeToPolicy = v ?? false),
                         activeColor: const Color(0xFF3C5C5A),
                       ),
                       const Text(
@@ -236,8 +275,11 @@ class _SignUpPageState extends State<SignUpPage> {
                           )
                         : const Text(
                             'SIGN UP',
-                            style:
-                                TextStyle(color: Colors.white, letterSpacing: 1),
+                            style: TextStyle(
+                              color: Colors.white,
+                              letterSpacing: 1,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                   ),
 
@@ -280,13 +322,15 @@ class _SignUpPageState extends State<SignUpPage> {
                           style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
                         ),
                         InkWell(
-                          onTap: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const LoginPage()),
-                            );
-                          },
+                          onTap: _loading
+                              ? null
+                              : () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const LoginPage()),
+                                  );
+                                },
                           child: const Text(
                             'Log in',
                             style: TextStyle(
