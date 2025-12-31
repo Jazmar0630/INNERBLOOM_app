@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 
-class MoodAppreciationPage extends StatelessWidget {
+class MoodAppreciationPage extends StatefulWidget {
   const MoodAppreciationPage({super.key});
+
+  @override
+  State<MoodAppreciationPage> createState() => _MoodAppreciationPageState();
+}
+
+class _MoodAppreciationPageState extends State<MoodAppreciationPage> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -67,28 +74,39 @@ class MoodAppreciationPage extends StatelessWidget {
 
                   const Spacer(),
 
-                  // Back to home Button
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HomePage()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3C5C5A),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 60),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      'BACK TO HOME',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
+                  // Back to home Button with hover effect
+                  MouseRegion(
+                    onEnter: (_) => setState(() => _isHovered = true),
+                    onExit: (_) => setState(() => _isHovered = false),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const HomePage()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isHovered 
+                              ? const Color(0xFF4A6B68) 
+                              : const Color(0xFF3C5C5A),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 60),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: _isHovered ? 8 : 4,
+                        ),
+                        child: Text(
+                          'BACK TO HOME',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
+                            letterSpacing: 1.2,
+                            fontWeight: _isHovered ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
                       ),
                     ),
                   ),

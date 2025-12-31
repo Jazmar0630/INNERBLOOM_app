@@ -99,7 +99,7 @@ class _HoverListTileState extends State<_HoverListTile> {
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        color: _isHovered ? Colors.grey.withOpacity(0.1) : Colors.transparent,
+        color: _isHovered ? Colors.grey.withOpacity(0.2) : Colors.transparent,
         child: ListTile(
           leading: widget.leading,
           title: widget.title,

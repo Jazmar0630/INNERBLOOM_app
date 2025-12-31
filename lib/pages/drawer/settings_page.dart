@@ -99,42 +99,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                   children: [
                     // Profile Section
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 30,
-                            backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Ahmad Syawqi',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Edit personal details',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.7)),
-                        ],
-                      ),
-                    ),
+                    _HoverProfileSection(),
                     const SizedBox(height: 8),
                     Divider(color: Colors.white.withOpacity(0.2), thickness: 1),
                     const SizedBox(height: 16),
@@ -264,7 +229,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }*/
 }
 
-class _SettingsTile extends StatelessWidget {
+class _SettingsTile extends StatefulWidget {
   const _SettingsTile({
     required this.icon,
     required this.title,
@@ -276,25 +241,99 @@ class _SettingsTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_SettingsTile> createState() => _SettingsTileState();
+}
+
+class _SettingsTileState extends State<_SettingsTile> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white.withOpacity(0.9), size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withOpacity(0.9),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon, 
+                color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9), 
+                size: 24,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9),
+                  ),
                 ),
               ),
+              Icon(
+                Icons.chevron_right, 
+                color: _isHovered ? Colors.white.withOpacity(0.7) : Colors.white.withOpacity(0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HoverProfileSection extends StatefulWidget {
+  @override
+  State<_HoverProfileSection> createState() => _HoverProfileSectionState();
+}
+
+class _HoverProfileSectionState extends State<_HoverProfileSection> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 30,
+              backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
             ),
-            Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.5)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ahmad Syawqi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Edit personal details',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _isHovered ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right, 
+              color: _isHovered ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.7),
+            ),
           ],
         ),
       ),
