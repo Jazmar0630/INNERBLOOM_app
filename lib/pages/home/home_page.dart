@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import '../relaxation/relaxation_page.dart';
 import '../widgets/app_drawer.dart';
-import '../widgets/video_player_overlay.dart'; // ADD THIS IMPORT
+import '../widgets/video_player_overlay.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.displayName = 'User!'});
@@ -17,8 +19,31 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _navIndex = 0;
+  String _username = 'User!';
 
-  // Video overlay - simplified (no more local controller/animation needed)
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsername();
+  }
+
+  void _fetchUsername() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        if (doc.exists && mounted) {
+          final data = doc.data();
+          setState(() {
+            _username = data?['username'] ?? 'User!';
+          });
+        }
+      } catch (e) {
+        // Keep default username on error
+      }
+    }
+  }
+
   void _playVideo(String title, String subtitle, IconData icon, String videoId) {
     VideoPlayerOverlay.show(
       context: context,
@@ -92,7 +117,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Hi, ${widget.displayName}',
+                'Hi, $_username',
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
