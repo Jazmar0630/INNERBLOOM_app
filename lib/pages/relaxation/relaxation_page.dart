@@ -297,28 +297,13 @@ class _RelaxationPageState extends State<RelaxationPage> {
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, idx) {
                       final isSelected = idx == _selectedCategory;
-                      return GestureDetector(
+                      return _CategoryChip(
+                        label: _categories[idx],
+                        isSelected: isSelected,
                         onTap: () {
                           setState(() => _selectedCategory = idx);
                           _scrollToCategory(idx);
                         },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.white.withOpacity(0.16),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Center(
-                            child: Text(
-                              _categories[idx],
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                color: isSelected ? const Color(0xFF3C5C5A) : Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
                       );
                     },
                   ),

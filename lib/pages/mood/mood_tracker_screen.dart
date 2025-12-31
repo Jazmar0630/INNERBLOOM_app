@@ -16,83 +16,47 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
 
   IconData _iconFor(Mood m) {
     switch (m) {
-      case Mood.happy: return Icons.sentiment_very_satisfied;
-      case Mood.okay: return Icons.sentiment_neutral;
-      case Mood.sad: return Icons.sentiment_dissatisfied;
-      case Mood.angry: return Icons.sentiment_very_dissatisfied;
-      case Mood.calm: return Icons.sentiment_satisfied;
+      case Mood.happy:
+        return Icons.sentiment_very_satisfied;
+      case Mood.okay:
+        return Icons.sentiment_neutral;
+      case Mood.sad:
+        return Icons.sentiment_dissatisfied;
+      case Mood.angry:
+        return Icons.sentiment_very_dissatisfied;
+      case Mood.calm:
+        return Icons.sentiment_satisfied;
     }
   }
 
   String _labelFor(Mood m) {
     switch (m) {
-      case Mood.happy: return 'Happy';
-      case Mood.okay: return 'Okay';
-      case Mood.sad: return 'Sad';
-      case Mood.angry: return 'Angry';
-      case Mood.calm: return 'Calm';
+      case Mood.happy:
+        return 'Happy';
+      case Mood.okay:
+        return 'Okay';
+      case Mood.sad:
+        return 'Sad';
+      case Mood.angry:
+        return 'Angry';
+      case Mood.calm:
+        return 'Calm';
     }
   }
 
-  Widget _moodOption(Mood mood) {
-    final sel = _selectedMood == mood;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedMood = mood),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          color: sel 
-              ? Colors.white.withOpacity(0.25)
-              : Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: sel 
-                ? Colors.white.withOpacity(0.6)
-                : Colors.white.withOpacity(0.15),
-            width: sel ? 2.5 : 1.5,
-          ),
-          boxShadow: sel ? [
-            BoxShadow(
-              color: Colors.white.withOpacity(0.2),
-              blurRadius: 12,
-              spreadRadius: 1,
-            ),
-          ] : [],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _iconFor(mood),
-              color: Colors.white,
-              size: sel ? 48 : 44,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _labelFor(mood),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: sel ? 15 : 14,
-                fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  void _selectMood(Mood m) => setState(() => _selectedMood = m);
 
   @override
   Widget build(BuildContext context) {
+    final calmWidth = MediaQuery.of(context).size.width * 0.45;
+
     return Scaffold(
       appBar: AppBar(
-        //title: const Text('Mood Tracker'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: const Color(0xFF3C5C5A),
         foregroundColor: Colors.white,
-      ),//
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -125,15 +89,31 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // cards area
                 Expanded(
                   child: Column(
                     children: [
                       Expanded(
                         child: Row(
                           children: [
-                            Expanded(child: _moodOption(Mood.happy)),
+                            Expanded(
+                              child: MoodHoverCard(
+                                icon: _iconFor(Mood.happy),
+                                label: _labelFor(Mood.happy),
+                                selected: _selectedMood == Mood.happy,
+                                onTap: () => _selectMood(Mood.happy),
+                              ),
+                            ),
                             const SizedBox(width: 12),
-                            Expanded(child: _moodOption(Mood.okay)),
+                            Expanded(
+                              child: MoodHoverCard(
+                                icon: _iconFor(Mood.okay),
+                                label: _labelFor(Mood.okay),
+                                selected: _selectedMood == Mood.okay,
+                                onTap: () => _selectMood(Mood.okay),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -141,9 +121,23 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                       Expanded(
                         child: Row(
                           children: [
-                            Expanded(child: _moodOption(Mood.sad)),
+                            Expanded(
+                              child: MoodHoverCard(
+                                icon: _iconFor(Mood.sad),
+                                label: _labelFor(Mood.sad),
+                                selected: _selectedMood == Mood.sad,
+                                onTap: () => _selectMood(Mood.sad),
+                              ),
+                            ),
                             const SizedBox(width: 12),
-                            Expanded(child: _moodOption(Mood.angry)),
+                            Expanded(
+                              child: MoodHoverCard(
+                                icon: _iconFor(Mood.angry),
+                                label: _labelFor(Mood.angry),
+                                selected: _selectedMood == Mood.angry,
+                                onTap: () => _selectMood(Mood.angry),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -151,31 +145,46 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                       Expanded(
                         child: Center(
                           child: SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.45,
-                            child: _moodOption(Mood.calm),
+                            width: calmWidth,
+                            child: MoodHoverCard(
+                              icon: _iconFor(Mood.calm),
+                              label: _labelFor(Mood.calm),
+                              selected: _selectedMood == Mood.calm,
+                              onTap: () => _selectMood(Mood.calm),
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                // next button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _selectedMood == null ? null : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MoodSurveyPageOne(data: MoodSurveyData()),
-                        ),
-                      );
-                    },
+                    onPressed: _selectedMood == null
+                        ? null
+                        : () {
+                            final data = MoodSurveyData();
+
+                            // ✅ OPTIONAL: if MoodSurveyData has a field, you can store it
+                            // data.mood = _selectedMood.toString().split('.').last;
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MoodSurveyPageOne(data: data),
+                              ),
+                            );
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF3C5C5A),
-                      disabledBackgroundColor: Colors.white.withOpacity(0.3),
-                      disabledForegroundColor: Colors.white.withOpacity(0.5),
+                      disabledBackgroundColor: Colors.white.withOpacity(0.30),
+                      disabledForegroundColor: Colors.white.withOpacity(0.50),
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -192,7 +201,92 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                     ),
                   ),
                 ),
-              ],  
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ Reusable hover + selected mood card
+class MoodHoverCard extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const MoodHoverCard({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.selected,
+  });
+
+  @override
+  State<MoodHoverCard> createState() => _MoodHoverCardState();
+}
+
+class _MoodHoverCardState extends State<MoodHoverCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = widget.selected || _hover;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          decoration: BoxDecoration(
+            color: active
+                ? Colors.white.withOpacity(0.25) // brighter on hover/selected
+                : Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: active
+                  ? Colors.white.withOpacity(0.60)
+                  : Colors.white.withOpacity(0.15),
+              width: active ? 2.5 : 1.5,
+            ),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.20),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
+          ),
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 220),
+            scale: active ? 1.02 : 1.0, // subtle pop on hover
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.icon,
+                  color: Colors.white,
+                  size: active ? 48 : 44,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: active ? 15 : 14,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

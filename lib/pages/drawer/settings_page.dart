@@ -101,7 +101,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     // Profile Section
                     _HoverProfileSection(),
                     const SizedBox(height: 8),
-                    Divider(color: Colors.white.withOpacity(1.5), thickness: 1),
+                    Divider(color: Colors.white.withOpacity(0.25), thickness: 1),
                     const SizedBox(height: 16),
 
                     // GENERAL Section
