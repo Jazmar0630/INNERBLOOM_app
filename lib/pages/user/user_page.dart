@@ -273,17 +273,34 @@ class _UserPageState extends State<UserPage> {
   Future<void> _addSampleMood() async {
     if (_uid == null) return;
     
-    final moods = [1, 2, 3, 4, 5];
-    final randomMood = (moods..shuffle()).first;
-    
+    // Add a test mood with high value (should show as Happy)
     await FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
         .collection('moods')
         .add({
-      'mood': randomMood,
+      'mood': 5, // Happy
       'createdAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> _addTestMoods() async {
+    if (_uid == null) return;
+    
+    // Add test moods with different values
+    final testMoods = [5, 4, 3, 4, 5]; // Happy, Good, Moderate, Good, Happy
+    
+    for (int i = 0; i < testMoods.length; i++) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_uid!)
+          .collection('moods')
+          .add({
+        'mood': testMoods[i],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      await Future.delayed(Duration(milliseconds: 100)); // Small delay
+    }
   }
 
   void _onNavTap(int index) {
@@ -709,6 +726,16 @@ class _UserPageState extends State<UserPage> {
                         ],
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Temporary test button - remove after testing
+                ElevatedButton(
+                  onPressed: _addTestMoods,
+                  child: Text('Add Test Moods (Happy/Good)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 24),
