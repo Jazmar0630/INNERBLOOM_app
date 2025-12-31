@@ -39,11 +39,13 @@ class _HomePageState extends State<HomePage> {
   // ✅ Pick best display name
   String _pickName(Map<String, dynamic>? data) {
     if (data != null) {
-      final name = (data['name'] ?? '').toString().trim();
-      if (name.isNotEmpty) return name;
 
       final username = (data['username'] ?? '').toString().trim();
       if (username.isNotEmpty) return username;
+
+      final name = (data['name'] ?? '').toString().trim();
+      if (name.isNotEmpty) return name;
+
     }
 
     // fallback: auth displayName

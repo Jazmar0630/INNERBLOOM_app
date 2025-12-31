@@ -103,10 +103,11 @@ class _SignUpPageState extends State<SignUpPage> {
       // 3) Create user document in Firestore (users/{uid})
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
-
+      
         // ✅ store both to avoid mismatch across pages
         'name': username,       // some pages might read "name"
         'username': username,   // some pages might read "username"
+        'isNewUser': true,
 
         'email': email,
         'role': 'user',
