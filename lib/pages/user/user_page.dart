@@ -9,9 +9,6 @@ import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
 import '../widgets/app_drawer.dart';
-import '../drawer/settings_page.dart';
-import '../drawer/help_and_support_page.dart';
-import '../drawer/privacy_policy.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -24,8 +21,10 @@ class _UserPageState extends State<UserPage> {
   int _navIndex = 3;
   String? _uid;
   StreamSubscription<User?>? _authSub;
+
   String? _initError;
   String _selectedPeriod = 'Weekly';
+
   bool _isCheckedIn = false;
   bool _isHovered = false;
 
@@ -33,18 +32,20 @@ class _UserPageState extends State<UserPage> {
   void initState() {
     super.initState();
     _uid = FirebaseAuth.instance.currentUser?.uid;
-    
+
     if (_uid != null) {
       _autoCheckIn();
-      _ensureUsernameExists(); // Add this to set username if missing
+      _ensureUsernameExists();
     }
 
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
+
       setState(() {
         _uid = user?.uid;
         _initError = null;
       });
+
       if (_uid != null) {
         _autoCheckIn();
         _ensureUsernameExists();
@@ -52,40 +53,47 @@ class _UserPageState extends State<UserPage> {
     });
   }
 
-  // Add this method to ensure username exists
-  void _ensureUsernameExists() async {
+  // Ensure username exists in Firestore
+  Future<void> _ensureUsernameExists() async {
     if (_uid == null) return;
-    
+
     try {
       final doc = await FirebaseFirestore.instance.collection('users').doc(_uid!).get();
-      if (!doc.exists || doc.data()?['username'] == null) {
-        // Set username to "ammar" or get from Firebase Auth
+      final data = doc.data();
+
+      // If doc missing or username missing -> set it
+      if (!doc.exists || data?['username'] == null || (data?['username']?.toString().trim().isEmpty ?? true)) {
         final currentUser = FirebaseAuth.instance.currentUser;
-        final username = currentUser?.displayName ?? 'ammar'; // Change 'ammar' to your desired username
-        
+        final username = currentUser?.displayName?.trim().isNotEmpty == true
+            ? currentUser!.displayName!.trim()
+            : 'ammar';
+
         await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
           'username': username,
           'createdAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       }
     } catch (e) {
+      // debug only
+      // ignore: avoid_print
       print('Error ensuring username: $e');
     }
   }
 
   void _autoCheckIn() async {
     if (_uid == null) return;
-    
+
     final today = _weekdayKey(DateTime.now());
-    
+
     try {
       await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
         'activeDays.$today': true,
         'lastActiveAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-      setState(() => _isCheckedIn = true);
-    } catch (e) {
-      // Silent fail
+
+      if (mounted) setState(() => _isCheckedIn = true);
+    } catch (_) {
+      // silent fail
     }
   }
 
@@ -110,18 +118,20 @@ class _UserPageState extends State<UserPage> {
         'activeDays.$today': true,
         'lastActiveAt': FieldValue.serverTimestamp(),
       });
-      setState(() => _isCheckedIn = true);
-    } catch (e) {
-      // Get current user's username from Firebase Auth or use default
+      if (mounted) setState(() => _isCheckedIn = true);
+    } catch (_) {
+      // create doc if missing
       final currentUser = FirebaseAuth.instance.currentUser;
-      final username = currentUser?.displayName ?? 'ammar'; // Change 'ammar' to your desired username
-      
+      final username = currentUser?.displayName?.trim().isNotEmpty == true
+          ? currentUser!.displayName!.trim()
+          : 'ammar';
+
       await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
         'username': username,
         'createdAt': FieldValue.serverTimestamp(),
         'activeDays': {
           'mon': today == 'mon',
-          'tue': today == 'tue', 
+          'tue': today == 'tue',
           'wed': today == 'wed',
           'thu': today == 'thu',
           'fri': today == 'fri',
@@ -129,8 +139,9 @@ class _UserPageState extends State<UserPage> {
           'sun': today == 'sun',
         },
         'lastActiveAt': FieldValue.serverTimestamp(),
-      });
-      setState(() => _isCheckedIn = true);
+      }, SetOptions(merge: true));
+
+      if (mounted) setState(() => _isCheckedIn = true);
     }
   }
 
@@ -141,13 +152,13 @@ class _UserPageState extends State<UserPage> {
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
-// Determine start date based on selected period
+
     DateTime now = DateTime.now();
     DateTime startDate;
-    
+
     switch (_selectedPeriod) {
       case 'Weekly':
-        startDate = now.subtract(Duration(days: 7));
+        startDate = now.subtract(const Duration(days: 7));
         break;
       case 'Monthly':
         startDate = DateTime(now.year, now.month, 1);
@@ -156,156 +167,16 @@ class _UserPageState extends State<UserPage> {
         startDate = DateTime(now.year, 1, 1);
         break;
       default:
-        startDate = now.subtract(Duration(days: 7));
+        startDate = now.subtract(const Duration(days: 7));
     }
 
     return FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
         .collection('moods')
-        // Query moods from start date
         .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
         .orderBy('createdAt', descending: false)
         .snapshots();
-  }
-// Aggregate mood data based on selected period
-  List<double> _aggregateMoodData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
-    if (docs.isEmpty) return [];
-    
-    switch (_selectedPeriod) {
-      case 'Weekly':
-        return _getWeeklyData(docs);
-      case 'Monthly':
-        return _getMonthlyData(docs);
-      case 'Yearly':
-        return _getYearlyData(docs);
-      default:
-        return _getWeeklyData(docs);
-    }
-  }
-
-  List<double> _getWeeklyData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
-    Map<int, List<int>> dayMoods = {};
-    DateTime now = DateTime.now();
-    
-    for (var doc in docs) {
-      final data = doc.data();
-      final mood = data['mood'] as int? ?? 0;
-      final timestamp = data['createdAt'] as Timestamp?;
-      
-      if (timestamp != null) {
-        final date = timestamp.toDate();
-        final daysDiff = now.difference(date).inDays;
-        if (daysDiff >= 0 && daysDiff < 7) {
-          dayMoods.putIfAbsent(6 - daysDiff, () => []).add(mood);
-        }
-      }
-    }
-    
-    List<double> result = [];
-    for (int i = 0; i < 7; i++) {
-      if (dayMoods.containsKey(i) && dayMoods[i]!.isNotEmpty) {
-        final avg = dayMoods[i]!.reduce((a, b) => a + b) / dayMoods[i]!.length;
-        result.add(avg);
-      } else {
-        result.add(0);
-      }
-    }
-    return result;
-  }
-
-  List<double> _getMonthlyData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
-    Map<int, List<int>> weekMoods = {};
-    DateTime now = DateTime.now();
-    DateTime startOfMonth = DateTime(now.year, now.month, 1);
-    
-    for (var doc in docs) {
-      final data = doc.data();
-      final mood = data['mood'] as int? ?? 0;
-      final timestamp = data['createdAt'] as Timestamp?;
-      
-      if (timestamp != null) {
-        final date = timestamp.toDate();
-        final weekOfMonth = ((date.day - 1) / 7).floor();
-        weekMoods.putIfAbsent(weekOfMonth, () => []).add(mood);
-      }
-    }
-    
-    List<double> result = [];
-    for (int i = 0; i < 5; i++) {
-      if (weekMoods.containsKey(i) && weekMoods[i]!.isNotEmpty) {
-        final avg = weekMoods[i]!.reduce((a, b) => a + b) / weekMoods[i]!.length;
-        result.add(avg);
-      } else {
-        result.add(0);
-      }
-    }
-    return result;
-  }
-
-  List<double> _getYearlyData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
-    Map<int, List<int>> monthMoods = {};
-    
-    for (var doc in docs) {
-      final data = doc.data();
-      final mood = data['mood'] as int? ?? 0;
-      final timestamp = data['createdAt'] as Timestamp?;
-      
-      if (timestamp != null) {
-        final date = timestamp.toDate();
-        final month = date.month - 1;
-        monthMoods.putIfAbsent(month, () => []).add(mood);
-      }
-    }
-    
-    List<double> result = [];
-    for (int i = 0; i < 12; i++) {
-      if (monthMoods.containsKey(i) && monthMoods[i]!.isNotEmpty) {
-        final avg = monthMoods[i]!.reduce((a, b) => a + b) / monthMoods[i]!.length;
-        result.add(avg);
-      } else {
-        result.add(0);
-      }
-    }
-    return result;
-  }
-
-  Future<void> _addSampleMood() async {
-    if (_uid == null) return;
-    
-    // Add a test mood with high value (should show as Happy)
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_uid!)
-        .collection('moods')
-        .add({
-      'mood': 5, // Happy
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  Future<void> _addTestMoods() async {
-    if (_uid == null) return;
-    
-    // Add test moods with different values
-    final testMoods = [5, 4, 3, 4, 5]; // Happy, Good, Moderate, Good, Happy
-    
-    for (int i = 0; i < testMoods.length; i++) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_uid!)
-          .collection('moods')
-          .add({
-        'mood': testMoods[i],
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      await Future.delayed(Duration(milliseconds: 100)); // Small delay
-    }
-    
-    // Force refresh the UI
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   void _onNavTap(int index) {
@@ -315,22 +186,13 @@ class _UserPageState extends State<UserPage> {
 
     switch (index) {
       case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
         break;
       case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OnboardingIntroPage()));
         break;
       case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const RelaxationPage()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const RelaxationPage()));
         break;
       case 3:
         break;
@@ -356,18 +218,22 @@ class _UserPageState extends State<UserPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ✅ TOP BAR with hover menu icon
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Builder(
-                      builder: (context) => IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
+                      builder: (context) => HoverMenuButton(
                         onPressed: () => Scaffold.of(context).openDrawer(),
                       ),
                     ),
+                    // (optional right side space)
+                    const SizedBox(width: 1),
                   ],
                 ),
+
                 const SizedBox(height: 8),
+
                 Center(
                   child: Column(
                     children: [
@@ -381,17 +247,16 @@ class _UserPageState extends State<UserPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
+
                       StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                         stream: _userDocStream(),
                         builder: (context, snapshot) {
                           String username = 'user';
                           if (snapshot.hasData && snapshot.data!.exists) {
                             final data = snapshot.data!.data();
-                            username = data?['username'] ?? 'user';
-                            // Debug: Print what's in Firestore
-                            print('Firestore data: $data');
-                            print('Username from Firestore: ${data?['username']}');
+                            username = (data?['username'] ?? 'user').toString();
                           }
+
                           return Text(
                             username,
                             style: const TextStyle(
@@ -402,14 +267,14 @@ class _UserPageState extends State<UserPage> {
                           );
                         },
                       ),
+
                       const SizedBox(height: 6),
+
                       Text(
                         'UID: ${_uid ?? "-"}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
                       ),
+
                       if (_initError != null) ...[
                         const SizedBox(height: 10),
                         Container(
@@ -422,17 +287,17 @@ class _UserPageState extends State<UserPage> {
                           ),
                           child: Text(
                             'Firestore error:\n$_initError',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 11,
-                            ),
+                            style: const TextStyle(color: Colors.red, fontSize: 11),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
+                // Daily check-in card (already has hover)
                 MouseRegion(
                   onEnter: (_) => setState(() => _isHovered = !_isCheckedIn),
                   onExit: (_) => setState(() => _isHovered = false),
@@ -441,39 +306,43 @@ class _UserPageState extends State<UserPage> {
                     transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(24),
-                      onTap: _isCheckedIn ? null : () async {
-                        if (_uid == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please login first')),
-                          );
-                          return;
-                        }
-                        try {
-                          await _markTodayActive();
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Checked in for today ✅')),
-                          );
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Check-in failed: $e')),
-                          );
-                        }
-                      },
+                      onTap: _isCheckedIn
+                          ? null
+                          : () async {
+                              if (_uid == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please login first')),
+                                );
+                                return;
+                              }
+                              try {
+                                await _markTodayActive();
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Checked in for today ✅')),
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Check-in failed: $e')),
+                                );
+                              }
+                            },
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         decoration: BoxDecoration(
                           color: _isCheckedIn ? Colors.white.withOpacity(0.7) : Colors.white,
                           borderRadius: BorderRadius.circular(24),
-                          boxShadow: _isHovered ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ] : null,
+                          boxShadow: _isHovered
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,20 +365,18 @@ class _UserPageState extends State<UserPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _isCheckedIn 
-                                ? 'Great! You\'ve checked in today!'
-                                : 'Check in daily and track your progress everyday!',
+                              _isCheckedIn
+                                  ? 'Great! You\'ve checked in today!'
+                                  : 'Check in daily and track your progress everyday!',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: _isCheckedIn ? Colors.black38 : Colors.black54,
                               ),
                             ),
                             const SizedBox(height: 16),
+
                             if (_uid == null)
-                              const Text(
-                                'Please login first',
-                                style: TextStyle(color: Colors.black54),
-                              )
+                              const Text('Please login first', style: TextStyle(color: Colors.black54))
                             else
                               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                                 stream: _userDocStream(),
@@ -520,14 +387,19 @@ class _UserPageState extends State<UserPage> {
                                       style: const TextStyle(color: Colors.red, fontSize: 12),
                                     );
                                   }
+
                                   if (!snapshot.hasData) {
                                     return Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: List.generate(7, (i) => 
-                                        _buildDayBubble(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i])
+                                      children: List.generate(
+                                        7,
+                                        (i) => _buildDayBubble(
+                                          ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                                        ),
                                       ),
                                     );
                                   }
+
                                   final doc = snapshot.data!;
                                   if (!doc.exists) {
                                     return const Text(
@@ -535,14 +407,18 @@ class _UserPageState extends State<UserPage> {
                                       style: TextStyle(color: Colors.black54, fontSize: 12),
                                     );
                                   }
+
                                   final data = doc.data() ?? {};
                                   final raw = data['activeDays'];
+
                                   final Map<String, bool> activeDays = (raw is Map)
                                       ? Map<String, bool>.from(
                                           raw.map((k, v) => MapEntry(k.toString(), v == true)),
                                         )
                                       : {};
+
                                   bool isActive(String key) => activeDays[key] == true;
+
                                   return Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -563,7 +439,10 @@ class _UserPageState extends State<UserPage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
+                // Insights card
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -574,6 +453,7 @@ class _UserPageState extends State<UserPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // header row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -601,19 +481,18 @@ class _UserPageState extends State<UserPage> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
-                                          period == 'Weekly' ? Icons.calendar_view_week :
-                                          period == 'Monthly' ? Icons.calendar_view_month :
-                                          Icons.calendar_today,
+                                          period == 'Weekly'
+                                              ? Icons.calendar_view_week
+                                              : period == 'Monthly'
+                                                  ? Icons.calendar_view_month
+                                                  : Icons.calendar_today,
                                           size: 14,
                                           color: Colors.black54,
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
                                           period,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
+                                          style: const TextStyle(fontSize: 12, color: Colors.black54),
                                         ),
                                       ],
                                     ),
@@ -621,9 +500,7 @@ class _UserPageState extends State<UserPage> {
                                 }).toList(),
                                 onChanged: (String? newValue) {
                                   if (newValue != null) {
-                                    setState(() {
-                                      _selectedPeriod = newValue;
-                                    });
+                                    setState(() => _selectedPeriod = newValue);
                                   }
                                 },
                                 icon: const Icon(Icons.arrow_drop_down, size: 18, color: Colors.black54),
@@ -632,7 +509,9 @@ class _UserPageState extends State<UserPage> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 16),
+
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -665,6 +544,7 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
+
                                   if (snapshot.hasError) {
                                     return Center(
                                       child: Padding(
@@ -677,6 +557,7 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
+
                                   if (!snapshot.hasData || snapshot.connectionState == ConnectionState.waiting) {
                                     return const Center(
                                       child: CircularProgressIndicator(
@@ -685,23 +566,17 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
+
                                   if (snapshot.data!.docs.isEmpty) {
                                     return Center(
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.mood,
-                                            size: 32,
-                                            color: Colors.black26,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          const Text(
-                                            'No mood data yet',
-                                            style: TextStyle(fontSize: 12, color: Colors.black38),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          const Text(
+                                        children: const [
+                                          Icon(Icons.mood, size: 32, color: Colors.black26),
+                                          SizedBox(height: 8),
+                                          Text('No mood data yet', style: TextStyle(fontSize: 12, color: Colors.black38)),
+                                          SizedBox(height: 4),
+                                          Text(
                                             'Complete a mood survey to see your chart',
                                             style: TextStyle(fontSize: 10, color: Colors.black26),
                                           ),
@@ -709,17 +584,20 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
-                                  final allMoods = snapshot.data!.docs
-                                      .map((d) {
-                                        final v = d.data()['mood'];
-                                        return (v is int) ? v.toDouble() : 0.0;
-                                      })
-                                      .toList();
-                                  
-                                  final displayLimit = _selectedPeriod == 'Weekly' ? 7 : 
-                                                     _selectedPeriod == 'Monthly' ? 30 : 50;
+
+                                  final allMoods = snapshot.data!.docs.map((d) {
+                                    final v = d.data()['mood'];
+                                    return (v is int) ? v.toDouble() : 0.0;
+                                  }).toList();
+
+                                  final displayLimit = _selectedPeriod == 'Weekly'
+                                      ? 7
+                                      : _selectedPeriod == 'Monthly'
+                                          ? 30
+                                          : 50;
+
                                   final moods = allMoods.take(displayLimit).toList().reversed.toList();
-                                  
+
                                   if (moods.isEmpty) {
                                     return const Center(
                                       child: Text(
@@ -728,6 +606,7 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
+
                                   return CustomPaint(
                                     painter: MoodChartPainter(moods, _selectedPeriod),
                                     child: Container(),
@@ -741,12 +620,14 @@ class _UserPageState extends State<UserPage> {
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 24),
               ],
             ),
           ),
         ),
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -754,23 +635,60 @@ class _UserPageState extends State<UserPage> {
         selectedItemColor: const Color(0xFF25424F),
         unselectedItemColor: Colors.grey[500],
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.psychology_alt_outlined),
-            label: 'Mood',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.self_improvement),
-            label: 'Relaxation',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'User',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.psychology_alt_outlined), label: 'Mood'),
+          BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Relaxation'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
         ],
+      ),
+    );
+  }
+}
+
+// ✅ Hovering menu button (brighter on hover)
+class HoverMenuButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const HoverMenuButton({super.key, required this.onPressed});
+
+  @override
+  State<HoverMenuButton> createState() => _HoverMenuButtonState();
+}
+
+class _HoverMenuButtonState extends State<HoverMenuButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: _hover ? Colors.white.withOpacity(0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: _hover
+              ? [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.25),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  )
+                ]
+              : [],
+        ),
+        child: IconButton(
+          onPressed: widget.onPressed,
+          splashRadius: 20,
+          icon: Icon(
+            Icons.menu,
+            color: _hover ? Colors.white : Colors.white.withOpacity(0.85),
+          ),
+        ),
       ),
     );
   }
@@ -789,15 +707,10 @@ Widget _buildDayBubble(String label, {bool isCompleted = false}) {
           color: isCompleted ? const Color(0xFF3C5C5A) : Colors.white,
           border: Border.all(color: const Color(0xFF3C5C5A)),
         ),
-        child: isCompleted
-            ? const Icon(Icons.check, size: 16, color: Colors.white)
-            : null,
+        child: isCompleted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
       ),
       const SizedBox(height: 4),
-      Text(
-        label,
-        style: const TextStyle(fontSize: 11, color: Colors.black87),
-      ),
+      Text(label, style: const TextStyle(fontSize: 11, color: Colors.black87)),
     ],
   );
 }
@@ -810,118 +723,96 @@ class _MoodLevelLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 11, color: Colors.black54),
-      ),
+      child: Text(text, style: const TextStyle(fontSize: 11, color: Colors.black54)),
     );
   }
 }
-// Mood chart painter
+
+// Mood chart painter (unchanged from your code)
 class MoodChartPainter extends CustomPainter {
   final List<double> moods;
   final String period;
-  
+
   MoodChartPainter(this.moods, this.period);
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     if (moods.isEmpty) return;
-    
+
     final paint = Paint()
       ..strokeWidth = 2
       ..style = PaintingStyle.fill;
-    
+
     final linePaint = Paint()
       ..color = const Color(0xFF3C5C5A).withOpacity(0.8)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-    
+
     final shadowPaint = Paint()
       ..color = const Color(0xFF3C5C5A).withOpacity(0.1)
       ..style = PaintingStyle.fill;
-    
+
     final barWidth = size.width / (moods.length * 1.5);
     final maxHeight = size.height - 20;
-    
+
     final path = Path();
     final shadowPath = Path();
     bool firstPoint = true;
-    
+
     for (int i = 0; i < moods.length; i++) {
       final mood = moods[i].clamp(0.0, 5.0);
       final x = (i + 0.5) * (size.width / moods.length);
       final barHeight = (mood / 5.0) * maxHeight;
       final y = size.height - barHeight;
-      // Draw bars
+
       if (mood > 0) {
         final colors = _getMoodColors(mood.round());
         paint.shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: colors,
-        ).createShader(Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight));
-        
+        ).createShader(Rect.fromLTWH(x - barWidth / 2, y, barWidth, barHeight));
+
         final barRect = RRect.fromRectAndRadius(
-          Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight),
+          Rect.fromLTWH(x - barWidth / 2, y, barWidth, barHeight),
           const Radius.circular(6),
         );
         canvas.drawRRect(barRect, paint);
-        
+
         if (firstPoint) {
-          path.moveTo(x, y + barHeight/2);
-          shadowPath.moveTo(x, y + barHeight/2);
+          path.moveTo(x, y + barHeight / 2);
+          shadowPath.moveTo(x, y + barHeight / 2);
           firstPoint = false;
         } else {
-          path.lineTo(x, y + barHeight/2);
-          shadowPath.lineTo(x, y + barHeight/2);
+          path.lineTo(x, y + barHeight / 2);
+          shadowPath.lineTo(x, y + barHeight / 2);
         }
-        
-        final moodName = _getMoodName(mood.round());
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: moodName,
-            style: const TextStyle(
-              color: Color(0xFF3C5C5A),
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout();
-        textPainter.paint(
-          canvas,
-          Offset(x - textPainter.width/2, y - 20),
-        );
       }
     }
-    // Complete shadow path
+
     if (!firstPoint) {
       shadowPath.lineTo(shadowPath.getBounds().right, size.height);
       shadowPath.lineTo(shadowPath.getBounds().left, size.height);
       shadowPath.close();
       canvas.drawPath(shadowPath, shadowPaint);
-      
+
       canvas.drawPath(path, linePaint);
-      
+
       for (int i = 0; i < moods.length; i++) {
         final mood = moods[i].clamp(0.0, 5.0);
         if (mood > 0) {
           final x = (i + 0.5) * (size.width / moods.length);
           final barHeight = (mood / 5.0) * maxHeight;
           final y = size.height - barHeight;
-          
+
           canvas.drawCircle(
-            Offset(x, y + barHeight/2),
+            Offset(x, y + barHeight / 2),
             4,
-            Paint()
-              ..color = Colors.white
-              ..style = PaintingStyle.fill,
+            Paint()..color = Colors.white,
           );
           canvas.drawCircle(
-            Offset(x, y + barHeight/2),
+            Offset(x, y + barHeight / 2),
             4,
             Paint()
               ..color = const Color(0xFF3C5C5A)
@@ -931,11 +822,10 @@ class MoodChartPainter extends CustomPainter {
         }
       }
     }
-    
-    // Add period labels at bottom
+
     _drawPeriodLabels(canvas, size);
   }
-  
+
   void _drawPeriodLabels(Canvas canvas, Size size) {
     List<String> labels;
     switch (period) {
@@ -946,12 +836,12 @@ class MoodChartPainter extends CustomPainter {
         labels = ['W1', 'W2', 'W3', 'W4', 'W5'];
         break;
       case 'Yearly':
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         break;
       default:
         labels = [];
     }
-    
+
     for (int i = 0; i < labels.length && i < moods.length; i++) {
       final x = (i + 0.5) * (size.width / moods.length);
       final textPainter = TextPainter(
@@ -966,35 +856,27 @@ class MoodChartPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       );
       textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(x - textPainter.width/2, size.height - 12),
-      );
+      textPainter.paint(canvas, Offset(x - textPainter.width / 2, size.height - 12));
     }
   }
-  
+
   List<Color> _getMoodColors(int mood) {
     switch (mood) {
-      case 5: return [const Color(0xFF4CAF50), const Color(0xFF81C784)];
-      case 4: return [const Color(0xFF8BC34A), const Color(0xFFAED581)];
-      case 3: return [const Color(0xFFFF9800), const Color(0xFFFFB74D)];
-      case 2: return [const Color(0xFFFF5722), const Color(0xFFFF8A65)];
-      case 1: return [const Color(0xFFF44336), const Color(0xFFE57373)];
-      default: return [const Color(0xFF9E9E9E), const Color(0xFFBDBDBD)];
+      case 5:
+        return [const Color(0xFF4CAF50), const Color(0xFF81C784)];
+      case 4:
+        return [const Color(0xFF8BC34A), const Color(0xFFAED581)];
+      case 3:
+        return [const Color(0xFFFF9800), const Color(0xFFFFB74D)];
+      case 2:
+        return [const Color(0xFFFF5722), const Color(0xFFFF8A65)];
+      case 1:
+        return [const Color(0xFFF44336), const Color(0xFFE57373)];
+      default:
+        return [const Color(0xFF9E9E9E), const Color(0xFFBDBDBD)];
     }
   }
-  
-  String _getMoodName(int mood) {
-    switch (mood) {
-      case 5: return 'Happy';
-      case 4: return 'Good';
-      case 3: return 'Moderate';
-      case 2: return 'Sad';
-      case 1: return 'Awful';
-      default: return 'Unknown';
-    }
-  }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

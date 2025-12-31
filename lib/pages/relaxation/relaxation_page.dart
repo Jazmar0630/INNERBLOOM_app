@@ -1,14 +1,11 @@
-import 'dart:io';
+// lib/pages/relaxation/relaxation_page.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../home/home_page.dart';
 import '../mood/onboarding_intro_page.dart';
 import '../user/user_page.dart';
 import '../widgets/app_drawer.dart';
-import '../widgets/video_player_overlay.dart'; // ADD THIS IMPORT
-
-import '../../services/relaxation_service.dart';
+import '../widgets/video_player_overlay.dart';
 
 class RelaxationPage extends StatefulWidget {
   const RelaxationPage({super.key, this.initialCategory});
@@ -21,336 +18,129 @@ class RelaxationPage extends StatefulWidget {
 
 class _RelaxationPageState extends State<RelaxationPage> {
   int _navIndex = 2;
-  int _selectedCategory = 0;
-
-  final ScrollController _categoryScrollController = ScrollController();
 
   final List<String> _categories = const [
-    'All',
     'Anxiety reliefs',
     'Overthinking detox',
-    'Motivation & energy',
-    'Stress & burnout',
     'Self-love & confidence',
+    'Stress & burnout',
   ];
 
-  final List<_RelaxItem> _allItems = const [
-    _RelaxItem(
-      title: 'Ocean waves',
-      subtitle: 'Gentle rolling ocean and wave sounds',
-      icon: Icons.waves,
-      videoId: 'cB_CwY9dhrA',
-      category: 'Anxiety reliefs',
-    ),
-    _RelaxItem(
-      title: 'Deep Breathing Exercise',
-      subtitle: 'Calm your anxiety with guided breathing',
-      icon: Icons.air,
-      videoId: 'LiUnFJ8P4gM',
-      category: 'Anxiety reliefs',
-    ),
-    _RelaxItem(
-      title: 'Peaceful Garden Sounds',
-      subtitle: 'Birds chirping in a serene garden',
-      icon: Icons.park,
-      videoId: 'euEwKtP5CG4',
-      category: 'Anxiety reliefs',
-    ),
-
-    _RelaxItem(
-      title: 'The Mindful Kind',
-      subtitle: 'Gentle steps to ease your mind',
-      icon: Icons.headphones,
-      videoId: 'KQWv5W7Y1x4',
-      category: 'Overthinking detox',
-    ),
-    _RelaxItem(
-      title: 'Peaceful Piano & Rain',
-      subtitle: 'Lo-fi piano with soft background rain',
-      icon: Icons.piano,
-      videoId: 'o8GrqUSdzi0',
-      category: 'Overthinking detox',
-    ),
-    _RelaxItem(
-      title: 'Mind Clarity Meditation',
-      subtitle: 'Clear your thoughts and find peace',
-      icon: Icons.spa,
-      videoId: 'ZToicYcHIOU',
-      category: 'Overthinking detox',
-    ),
-
-    _RelaxItem(
-      title: 'Morning Energy Boost',
-      subtitle: 'Uplifting music to start your day',
-      icon: Icons.wb_sunny,
-      videoId: '9bZkp7q19f0',
-      category: 'Motivation & energy',
-    ),
-    _RelaxItem(
-      title: 'Power Through Your Day',
-      subtitle: 'Motivational speech and energetic beats',
-      icon: Icons.bolt,
-      videoId: '3JZ_D3ELwOQ',
-      category: 'Motivation & energy',
-    ),
-    _RelaxItem(
-      title: 'Workout Motivation Mix',
-      subtitle: 'High-energy tracks to keep you moving',
-      icon: Icons.fitness_center,
-      videoId: 'sD-tzrVZvrY',
-      category: 'Motivation & energy',
-    ),
-
-    _RelaxItem(
-      title: 'Forest Birds & Wind',
-      subtitle: 'Soft wind and forest ambience',
-      icon: Icons.forest,
-      videoId: 'XxP8kxUn5bc',
-      category: 'Stress & burnout',
-    ),
-    _RelaxItem(
-      title: 'Stress Relief Meditation',
-      subtitle: 'Release tension and restore balance',
-      icon: Icons.self_improvement,
-      videoId: 'KVTKZKh2fuU',
-      category: 'Stress & burnout',
-    ),
-    _RelaxItem(
-      title: 'Calm Piano for Work',
-      subtitle: 'Gentle melodies to reduce workplace stress',
-      icon: Icons.piano_outlined,
-      videoId: 'ApCL2GomTD4',
-      category: 'Stress & burnout',
-    ),
-
-    _RelaxItem(
-      title: 'Positive Affirmations',
-      subtitle: 'Build confidence with daily affirmations',
-      icon: Icons.favorite,
-      videoId: 'DCjaFq3sXMg',
-      category: 'Self-love & confidence',
-    ),
-    _RelaxItem(
-      title: 'Surah Ar-Rahman',
-      subtitle: 'Recitation by Mishary Al Afasy',
-      icon: Icons.menu_book,
-      videoId: 'H4N5eFbLl9A',
-      category: 'Self-love & confidence',
-    ),
-    _RelaxItem(
-      title: 'Self-Care Meditation',
-      subtitle: 'Love yourself and embrace inner peace',
-      icon: Icons.spa_outlined,
-      videoId: 'itZMM5gCboo',
-      category: 'Self-love & confidence',
-    ),
-  ];
-
-  List<_RelaxItem> get _filteredItems {
-    if (_selectedCategory == 0) return _allItems;
-    final categoryName = _categories[_selectedCategory];
-    return _allItems.where((item) => item.category == categoryName).toList();
-  }
+  late String _selectedCategory;
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.initialCategory != null) {
-      final index = _categories.indexOf(widget.initialCategory!);
-      if (index != -1) {
-        _selectedCategory = index;
-      }
-    }
+    _selectedCategory = widget.initialCategory ?? _categories.first;
   }
 
-  void _scrollToCategory(int index) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_categoryScrollController.hasClients) return;
-
-      if (index <= 1) {
-        _categoryScrollController.animateTo(
-          0.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-        return;
-      }
-
-      final itemWidth = 150.0;
-      final spacing = 8.0;
-      final targetPosition = ((itemWidth + spacing) * (index - 1));
-      final maxScroll = _categoryScrollController.position.maxScrollExtent;
-      final scrollTo = targetPosition > maxScroll ? maxScroll : targetPosition;
-
-      _categoryScrollController.animateTo(
-        scrollTo,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
-
-  void _onNavTap(int index) {
-    if (index == _navIndex) return;
-    setState(() => _navIndex = index);
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomePage()));
-        break;
-      case 1:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OnboardingIntroPage()));
-        break;
-      case 2:
-        break;
-      case 3:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const UserPage()));
-        break;
-    }
-  }
-
-  void _playVideo(_RelaxItem item) {
+  void _playVideo({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String videoId,
+  }) {
     VideoPlayerOverlay.show(
       context: context,
-      videoId: item.videoId,
-      title: item.title,
-      subtitle: item.subtitle,
-      icon: item.icon,
-      onGenerateText: () async {
-        return await RelaxationService.generateRelaxation(mood: 'calm');
-      },
+      videoId: videoId,
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
     );
   }
 
-  @override
-  void dispose() {
-    _categoryScrollController.dispose();
-    super.dispose();
+  void _onNavTap(int i) {
+    setState(() => _navIndex = i);
+
+    if (i == 0) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } else if (i == 1) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+      );
+    } else if (i == 3) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const UserPage()),
+      );
+    }
+  }
+
+  List<_RelaxItem> _itemsFor(String category) {
+    // You can replace these with your real content (video ids, text, etc.)
+    switch (category) {
+      case 'Anxiety reliefs':
+        return const [
+          _RelaxItem(
+            title: 'Breathing reset',
+            subtitle: 'Guided breathing to reduce anxiety fast',
+            icon: Icons.air,
+            videoId: 'inpok4MKVLM',
+          ),
+          _RelaxItem(
+            title: 'Grounding technique',
+            subtitle: 'Calm your body using 5-4-3-2-1 method',
+            icon: Icons.spa,
+            videoId: '30VMIEmA114',
+          ),
+        ];
+      case 'Overthinking detox':
+        return const [
+          _RelaxItem(
+            title: 'Quiet the mind',
+            subtitle: 'Short talk to slow racing thoughts',
+            icon: Icons.psychology_alt_outlined,
+            videoId: '3JZ_D3ELwOQ',
+          ),
+          _RelaxItem(
+            title: 'Focus music',
+            subtitle: 'Soft background sound for studying',
+            icon: Icons.headphones,
+            videoId: 'jfKfPfyJRdk',
+          ),
+        ];
+      case 'Self-love & confidence':
+        return const [
+          _RelaxItem(
+            title: 'Self-love affirmations',
+            subtitle: 'A gentle reminder that you’re doing your best',
+            icon: Icons.favorite_outline,
+            videoId: 'ZToicYcHIOU',
+          ),
+          _RelaxItem(
+            title: 'Confidence boost',
+            subtitle: 'Small mindset shift, big results',
+            icon: Icons.emoji_events_outlined,
+            videoId: 'wnHW6o8WMas',
+          ),
+        ];
+      case 'Stress & burnout':
+      default:
+        return const [
+          _RelaxItem(
+            title: 'Stress release',
+            subtitle: 'Relax shoulders + jaw + breathing',
+            icon: Icons.self_improvement,
+            videoId: 'aXItOY0sLRY',
+          ),
+          _RelaxItem(
+            title: 'Sleep wind-down',
+            subtitle: 'Slow down and reset after a long day',
+            icon: Icons.nightlight_round,
+            videoId: '2OEL4P1Rz04',
+          ),
+        ];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final items = _itemsFor(_selectedCategory);
+
     return Scaffold(
       extendBody: true,
       drawer: const AppDrawer(),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Builder(
-                      builder: (context) => IconButton(
-                        icon: const Icon(Icons.menu, color: Colors.white),
-                        onPressed: () => Scaffold.of(context).openDrawer(),
-                      ),
-                    ),
-                    const CircleAvatar(
-                      radius: 18,
-                      backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search music, audio, videos',
-                    filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.search),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                const Text(
-                  'Categories',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-                const SizedBox(height: 10),
-
-                SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    controller: _categoryScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: _categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, idx) {
-                      final isSelected = idx == _selectedCategory;
-                      return _CategoryChip(
-                        label: _categories[idx],
-                        isSelected: isSelected,
-                        onTap: () {
-                          setState(() => _selectedCategory = idx);
-                          _scrollToCategory(idx);
-                        },
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 22),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Listen or Watch:',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
-                    ),
-                    Text(
-                      '${_filteredItems.length} videos',
-                      style: const TextStyle(fontSize: 12, color: Colors.white70),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                Expanded(
-                  child: _filteredItems.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No videos in this category',
-                            style: TextStyle(color: Colors.white70, fontSize: 14),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          itemCount: _filteredItems.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final item = _filteredItems[index];
-                            return _RelaxCard(
-                              item: item,
-                              onPlay: () => _playVideo(item),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -364,6 +154,159 @@ class _RelaxationPageState extends State<RelaxationPage> {
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
         ],
       ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF3C5C5A), Color(0xFF9DA5A9)],
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            children: [
+              // TOP BAR (hover menu)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Builder(
+                    builder: (context) => HoverMenuButton(
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+                  ),
+                  const CircleAvatar(
+                    radius: 18,
+                    backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              const Text(
+                'Relaxation',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Pick a category and start calming down.',
+                style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8)),
+              ),
+
+              const SizedBox(height: 16),
+
+              // CATEGORY ROW (hover brighten)
+              SizedBox(
+                height: 44,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, i) {
+                    final cat = _categories[i];
+                    final selected = cat == _selectedCategory;
+
+                    return HoverPill(
+                      selected: selected,
+                      text: cat,
+                      onTap: () => setState(() => _selectedCategory = cat),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // CONTENT CARDS (hover brighten)
+              ...items.map((it) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: HoverBrightCard(
+                    onTap: () => _playVideo(
+                      title: it.title,
+                      subtitle: it.subtitle,
+                      icon: it.icon,
+                      videoId: it.videoId,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 54,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              color: Colors.black12,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(it.icon, size: 28, color: Colors.black87),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  it.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  it.subtitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                    height: 1.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton.icon(
+                                    onPressed: () => _playVideo(
+                                      title: it.title,
+                                      subtitle: it.subtitle,
+                                      icon: it.icon,
+                                      videoId: it.videoId,
+                                    ),
+                                    icon: const Icon(Icons.play_arrow),
+                                    label: const Text('Play'),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                      backgroundColor: Colors.black.withOpacity(0.06),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      foregroundColor: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -373,110 +316,56 @@ class _RelaxItem {
   final String subtitle;
   final IconData icon;
   final String videoId;
-  final String category;
 
   const _RelaxItem({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.videoId,
-    required this.category,
   });
 }
 
-class _RelaxCard extends StatefulWidget {
-  final _RelaxItem item;
-  final VoidCallback? onPlay;
-
-  const _RelaxCard({required this.item, this.onPlay});
+/// ✅ Hover menu button (brighter on hover)
+class HoverMenuButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const HoverMenuButton({super.key, required this.onPressed});
 
   @override
-  State<_RelaxCard> createState() => _RelaxCardState();
+  State<HoverMenuButton> createState() => _HoverMenuButtonState();
 }
 
-class _RelaxCardState extends State<_RelaxCard> {
-  bool _isHovered = false;
+class _HoverMenuButtonState extends State<HoverMenuButton> {
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onPlay,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: _isHovered ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ] : null,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3C5C5A).withOpacity(_isHovered ? 0.15 : 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  widget.item.icon, 
-                  color: _isHovered ? const Color(0xFF2A4A47) : const Color(0xFF3C5C5A),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      widget.item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: _isHovered ? Colors.black : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.item.subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: _isHovered ? Colors.black87 : Colors.black54,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: widget.onPlay,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _isHovered ? const Color(0xFF2A4A47) : const Color(0xFF3C5C5A),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
-                ),
-              ),
-            ],
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: _hover ? Colors.white.withOpacity(0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: _hover
+              ? [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.25),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  )
+                ]
+              : [],
+        ),
+        child: IconButton(
+          onPressed: widget.onPressed,
+          splashRadius: 20,
+          icon: Icon(
+            Icons.menu,
+            color: _hover ? Colors.white : Colors.white.withOpacity(0.85),
           ),
         ),
       ),
@@ -484,52 +373,115 @@ class _RelaxCardState extends State<_RelaxCard> {
   }
 }
 
-class _CategoryChip extends StatefulWidget {
-  final String label;
-  final bool isSelected;
+/// ✅ Hover-bright wrapper for cards
+class HoverBrightCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+
+  const HoverBrightCard({super.key, required this.child, this.onTap});
+
+  @override
+  State<HoverBrightCard> createState() => _HoverBrightCardState();
+}
+
+class _HoverBrightCardState extends State<HoverBrightCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hover;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        transform: Matrix4.identity()..scale(active ? 1.01 : 1.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.20),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                  )
+                ]
+              : [],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: widget.onTap,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 180),
+            opacity: active ? 1.0 : 0.92,
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ Hover category pill
+class HoverPill extends StatefulWidget {
+  final bool selected;
+  final String text;
   final VoidCallback onTap;
 
-  const _CategoryChip({
-    required this.label,
-    required this.isSelected,
+  const HoverPill({
+    super.key,
+    required this.selected,
+    required this.text,
     required this.onTap,
   });
 
   @override
-  State<_CategoryChip> createState() => _CategoryChipState();
+  State<HoverPill> createState() => _HoverPillState();
 }
 
-class _CategoryChipState extends State<_CategoryChip> {
-  bool _isHovered = false;
+class _HoverPillState extends State<HoverPill> {
+  bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
+    final active = widget.selected || _hover;
+
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: widget.isSelected 
-                ? Colors.white 
-                : _isHovered 
-                    ? Colors.white.withOpacity(0.25) 
-                    : Colors.white.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(20),
+            color: active ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: active ? Colors.white.withOpacity(0.60) : Colors.white.withOpacity(0.18),
+              width: active ? 2.0 : 1.2,
+            ),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.18),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : [],
           ),
-          child: Center(
-            child: Text(
-              widget.label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: widget.isSelected 
-                    ? const Color(0xFF3C5C5A) 
-                    : _isHovered ? Colors.white : Colors.white.withOpacity(0.9),
-              ),
+          child: Text(
+            widget.text,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         ),
