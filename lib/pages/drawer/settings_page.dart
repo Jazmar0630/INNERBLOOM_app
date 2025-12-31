@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+
 import '../mood/onboarding_intro_page.dart';
 import '../relaxation/relaxation_page.dart';
 import '../user/user_page.dart';
 import '../home/home_page.dart';
 import '../widgets/app_drawer.dart';
-import 'help_and_support_page.dart';
-import 'privacy_policy.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -21,7 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AppDrawer(), // ADDED DRAWER
+      drawer: const AppDrawer(),
       extendBody: true,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -67,6 +66,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: SafeArea(
           child: Column(
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -94,17 +94,22 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
               ),
+
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                   children: [
-                    // Profile Section
-                    _HoverProfileSection(),
+                    // Profile Section (with hover)
+                    _HoverProfileSection(
+                      onTap: () {
+                        // TODO: Navigate to edit profile page
+                      },
+                    ),
                     const SizedBox(height: 8),
                     Divider(color: Colors.white.withOpacity(0.25), thickness: 1),
                     const SizedBox(height: 16),
 
-                    // GENERAL Section
+                    // GENERAL
                     Padding(
                       padding: const EdgeInsets.only(left: 4, bottom: 12),
                       child: Text(
@@ -136,10 +141,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       icon: Icons.delete_outline,
                       title: 'Delete account',
                       onTap: () {},
+                      danger: true,
                     ),
                     const SizedBox(height: 24),
 
-                    // FEEDBACK Section
+                    // FEEDBACK
                     Padding(
                       padding: const EdgeInsets.only(left: 4, bottom: 12),
                       child: Text(
@@ -162,6 +168,18 @@ class _SettingsPageState extends State<SettingsPage> {
                       title: 'Send feedback',
                       onTap: () {},
                     ),
+
+                    const SizedBox(height: 18),
+                    Divider(color: Colors.white.withOpacity(0.25), thickness: 1),
+                    const SizedBox(height: 10),
+
+                    // Optional: Exit App
+                    _SettingsTile(
+                      icon: Icons.exit_to_app,
+                      title: 'Exit App',
+                      onTap: () => exit(0),
+                      danger: true,
+                    ),
                   ],
                 ),
               ),
@@ -171,62 +189,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-
-  /*// DRAWER WIDGET
-  Widget _buildAppDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: Color(0xFF3C5C5A)),
-            child: Text(
-              'InnerBloom',
-              style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              // Already on Settings page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Help & Support'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HelpSupportPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.exit_to_app, color: Colors.red),
-            title: const Text('Exit App', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              exit(0);
-            },
-          ),
-        ],
-      ),
-    );
-  }*/
 }
 
 class _SettingsTile extends StatefulWidget {
@@ -234,11 +196,13 @@ class _SettingsTile extends StatefulWidget {
     required this.icon,
     required this.title,
     required this.onTap,
+    this.danger = false,
   });
 
   final IconData icon;
   final String title;
   final VoidCallback onTap;
+  final bool danger;
 
   @override
   State<_SettingsTile> createState() => _SettingsTileState();
@@ -246,38 +210,74 @@ class _SettingsTile extends StatefulWidget {
 
 class _SettingsTileState extends State<_SettingsTile> {
   bool _isHovered = false;
+  bool _isPressed = false;
+
+  // Hover makes container darker, pressed makes it slightly more dark
+  Color _tileBgColor() {
+    if (_isPressed) return Colors.black.withOpacity(0.20);
+    if (_isHovered) return Colors.black.withOpacity(0.12);
+    return Colors.white.withOpacity(0.06);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final baseTextColor = widget.danger ? Colors.redAccent : Colors.white.withOpacity(0.92);
+    final hoverTextColor = widget.danger ? Colors.redAccent.withOpacity(0.95) : Colors.white;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: widget.onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-          child: Row(
-            children: [
-              Icon(
-                widget.icon, 
-                color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9), 
-                size: 24,
+      onExit: (_) => setState(() {
+        _isHovered = false;
+        _isPressed = false;
+      }),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: Colors.white.withOpacity(0.08),
+          highlightColor: Colors.white.withOpacity(0.05),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 130),
+            curve: Curves.easeOut,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+            decoration: BoxDecoration(
+              color: _tileBgColor(), // ✅ darker on hover
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _isHovered ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.14),
+                width: 1,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  widget.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 24,
+                  color: _isHovered ? hoverTextColor : baseTextColor,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: _isHovered ? hoverTextColor : baseTextColor,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right, 
-                color: _isHovered ? Colors.white.withOpacity(0.7) : Colors.white.withOpacity(0.5),
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right,
+                  color: _isHovered
+                      ? Colors.white.withOpacity(0.75)
+                      : Colors.white.withOpacity(0.50),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -286,6 +286,9 @@ class _SettingsTileState extends State<_SettingsTile> {
 }
 
 class _HoverProfileSection extends StatefulWidget {
+  const _HoverProfileSection({this.onTap});
+  final VoidCallback? onTap;
+
   @override
   State<_HoverProfileSection> createState() => _HoverProfileSectionState();
 }
@@ -295,46 +298,66 @@ class _HoverProfileSectionState extends State<_HoverProfileSection> {
 
   @override
   Widget build(BuildContext context) {
+    final bg = _isHovered ? Colors.black.withOpacity(0.12) : Colors.white.withOpacity(0.06);
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              radius: 30,
-              backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: Colors.white.withOpacity(0.08),
+        highlightColor: Colors.white.withOpacity(0.05),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 130),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: bg, // ✅ darker on hover
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isHovered ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.14),
+              width: 1,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ahmad Syawqi',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Edit personal details',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: _isHovered ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.7),
-                    ),
-                  ),
-                ],
+          ),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                radius: 30,
+                backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
               ),
-            ),
-            Icon(
-              Icons.chevron_right, 
-              color: _isHovered ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.7),
-            ),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ahmad Syawqi',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Edit personal details',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: _isHovered
+                            ? Colors.white.withOpacity(0.85)
+                            : Colors.white.withOpacity(0.70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: _isHovered ? Colors.white.withOpacity(0.85) : Colors.white.withOpacity(0.70),
+              ),
+            ],
+          ),
         ),
       ),
     );
