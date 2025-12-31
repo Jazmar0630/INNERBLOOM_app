@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,8 +9,7 @@ import '../widgets/app_drawer.dart';
 import '../widgets/video_player_overlay.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, this.displayName = 'User!'});
-  final String displayName;
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -19,30 +17,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _navIndex = 0;
-  String _username = 'User!';
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUsername();
-  }
-
-  void _fetchUsername() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-        if (doc.exists && mounted) {
-          final data = doc.data();
-          setState(() {
-            _username = data?['username'] ?? 'User!';
-          });
-        }
-      } catch (e) {
-        // Keep default username on error
-      }
-    }
-  }
 
   void _playVideo(String title, String subtitle, IconData icon, String videoId) {
     VideoPlayerOverlay.show(
@@ -52,6 +26,33 @@ class _HomePageState extends State<HomePage> {
       subtitle: subtitle,
       icon: icon,
     );
+  }
+
+  // ✅ Live user document stream (auto updates header when name changes)
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      // return an empty stream if not logged in
+      return const Stream.empty();
+    }
+    return FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+  }
+
+  // ✅ Pick the best display name
+  String _pickName(Map<String, dynamic>? data) {
+    if (data == null) return 'User';
+
+    final name = (data['name'] ?? '').toString().trim();
+    if (name.isNotEmpty) return name;
+
+    final username = (data['username'] ?? '').toString().trim();
+    if (username.isNotEmpty) return username;
+
+    // fallback: email prefix if no name fields exist
+    final email = FirebaseAuth.instance.currentUser?.email ?? '';
+    if (email.contains('@')) return email.split('@').first;
+
+    return 'User';
   }
 
   @override
@@ -116,14 +117,31 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                'Hi, $_username',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
+
+              // ✅ Header: Live username from Firestore
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: _userDocStream(),
+                builder: (context, snapshot) {
+                  String display = 'User';
+
+                  if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                    display = _pickName(snapshot.data!.data());
+                  } else {
+                    // fallback even if doc not created yet
+                    display = _pickName(null);
+                  }
+
+                  return Text(
+                    'Hi, $display!',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  );
+                },
               ),
+
               const SizedBox(height: 6),
               const Text(
                 'How do you feel today?',
@@ -250,6 +268,7 @@ class _MoodChip extends StatelessWidget {
     required this.label,
     required this.onTap,
   });
+
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -319,7 +338,10 @@ class _RecoCard extends StatelessWidget {
               children: [
                 Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.3)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.3),
+                ),
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
