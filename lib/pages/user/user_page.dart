@@ -141,14 +141,133 @@ class _UserPageState extends State<UserPage> {
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _moodStream() {
     if (_uid == null) return const Stream.empty();
+// Determine start date based on selected period
+    DateTime now = DateTime.now();
+    DateTime startDate;
+    
+    switch (_selectedPeriod) {
+      case 'Weekly':
+        startDate = now.subtract(Duration(days: 7));
+        break;
+      case 'Monthly':
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      case 'Yearly':
+        startDate = DateTime(now.year, 1, 1);
+        break;
+      default:
+        startDate = now.subtract(Duration(days: 7));
+    }
 
     return FirebaseFirestore.instance
         .collection('users')
         .doc(_uid!)
         .collection('moods')
-        .orderBy('createdAt', descending: true)
-        .limit(_selectedPeriod == 'Weekly' ? 7 : _selectedPeriod == 'Monthly' ? 30 : 50)
+        // Query moods from start date
+        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+        .orderBy('createdAt', descending: false)
         .snapshots();
+  }
+// Aggregate mood data based on selected period
+  List<double> _aggregateMoodData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    if (docs.isEmpty) return [];
+    
+    switch (_selectedPeriod) {
+      case 'Weekly':
+        return _getWeeklyData(docs);
+      case 'Monthly':
+        return _getMonthlyData(docs);
+      case 'Yearly':
+        return _getYearlyData(docs);
+      default:
+        return _getWeeklyData(docs);
+    }
+  }
+
+  List<double> _getWeeklyData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    Map<int, List<int>> dayMoods = {};
+    DateTime now = DateTime.now();
+    
+    for (var doc in docs) {
+      final data = doc.data();
+      final mood = data['mood'] as int? ?? 0;
+      final timestamp = data['createdAt'] as Timestamp?;
+      
+      if (timestamp != null) {
+        final date = timestamp.toDate();
+        final daysDiff = now.difference(date).inDays;
+        if (daysDiff >= 0 && daysDiff < 7) {
+          dayMoods.putIfAbsent(6 - daysDiff, () => []).add(mood);
+        }
+      }
+    }
+    
+    List<double> result = [];
+    for (int i = 0; i < 7; i++) {
+      if (dayMoods.containsKey(i) && dayMoods[i]!.isNotEmpty) {
+        final avg = dayMoods[i]!.reduce((a, b) => a + b) / dayMoods[i]!.length;
+        result.add(avg);
+      } else {
+        result.add(0);
+      }
+    }
+    return result;
+  }
+
+  List<double> _getMonthlyData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    Map<int, List<int>> weekMoods = {};
+    DateTime now = DateTime.now();
+    DateTime startOfMonth = DateTime(now.year, now.month, 1);
+    
+    for (var doc in docs) {
+      final data = doc.data();
+      final mood = data['mood'] as int? ?? 0;
+      final timestamp = data['createdAt'] as Timestamp?;
+      
+      if (timestamp != null) {
+        final date = timestamp.toDate();
+        final weekOfMonth = ((date.day - 1) / 7).floor();
+        weekMoods.putIfAbsent(weekOfMonth, () => []).add(mood);
+      }
+    }
+    
+    List<double> result = [];
+    for (int i = 0; i < 5; i++) {
+      if (weekMoods.containsKey(i) && weekMoods[i]!.isNotEmpty) {
+        final avg = weekMoods[i]!.reduce((a, b) => a + b) / weekMoods[i]!.length;
+        result.add(avg);
+      } else {
+        result.add(0);
+      }
+    }
+    return result;
+  }
+
+  List<double> _getYearlyData(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+    Map<int, List<int>> monthMoods = {};
+    
+    for (var doc in docs) {
+      final data = doc.data();
+      final mood = data['mood'] as int? ?? 0;
+      final timestamp = data['createdAt'] as Timestamp?;
+      
+      if (timestamp != null) {
+        final date = timestamp.toDate();
+        final month = date.month - 1;
+        monthMoods.putIfAbsent(month, () => []).add(mood);
+      }
+    }
+    
+    List<double> result = [];
+    for (int i = 0; i < 12; i++) {
+      if (monthMoods.containsKey(i) && monthMoods[i]!.isNotEmpty) {
+        final avg = monthMoods[i]!.reduce((a, b) => a + b) / monthMoods[i]!.length;
+        result.add(avg);
+      } else {
+        result.add(0);
+      }
+    }
+    return result;
   }
 
   Future<void> _addSampleMood() async {
@@ -568,18 +687,10 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
-                                  final allMoods = snapshot.data!.docs
-                                      .map((d) {
-                                        final v = d.data()['mood'];
-                                        return (v is int) ? v : 0;
-                                      })
-                                      .toList();
+                                  // Aggregate mood data
+                                  final aggregatedMoods = _aggregateMoodData(snapshot.data!.docs);
                                   
-                                  final displayLimit = _selectedPeriod == 'Weekly' ? 7 : 
-                                                     _selectedPeriod == 'Monthly' ? 30 : 50;
-                                  final moods = allMoods.take(displayLimit).toList().reversed.toList();
-                                  
-                                  if (moods.isEmpty) {
+                                  if (aggregatedMoods.isEmpty || aggregatedMoods.every((m) => m == 0)) {
                                     return const Center(
                                       child: Text(
                                         'No mood data for selected period',
@@ -588,7 +699,7 @@ class _UserPageState extends State<UserPage> {
                                     );
                                   }
                                   return CustomPaint(
-                                    painter: MoodChartPainter(moods),
+                                    painter: MoodChartPainter(aggregatedMoods, _selectedPeriod),
                                     child: Container(),
                                   );
                                 },
@@ -676,11 +787,12 @@ class _MoodLevelLabel extends StatelessWidget {
     );
   }
 }
-
+// Mood chart painter
 class MoodChartPainter extends CustomPainter {
-  final List<int> moods;
+  final List<double> moods;
+  final String period;
   
-  MoodChartPainter(this.moods);
+  MoodChartPainter(this.moods, this.period);
   
   @override
   void paint(Canvas canvas, Size size) {
@@ -708,41 +820,117 @@ class MoodChartPainter extends CustomPainter {
     bool firstPoint = true;
     
     for (int i = 0; i < moods.length; i++) {
-      final mood = moods[i].clamp(0, 5);
+      final mood = moods[i].clamp(0.0, 5.0);
       final x = (i + 0.5) * (size.width / moods.length);
       final barHeight = (mood / 5.0) * maxHeight;
       final y = size.height - barHeight;
-      
-      final colors = _getMoodColors(mood);
-      paint.shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: colors,
-      ).createShader(Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight));
-      
-      final barRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight),
-        const Radius.circular(6),
-      );
-      canvas.drawRRect(barRect, paint);
-      
-      if (firstPoint) {
-        path.moveTo(x, y + barHeight/2);
-        shadowPath.moveTo(x, y + barHeight/2);
-        firstPoint = false;
-      } else {
-        path.lineTo(x, y + barHeight/2);
-        shadowPath.lineTo(x, y + barHeight/2);
+      // Draw bars
+      if (mood > 0) {
+        final colors = _getMoodColors(mood.round());
+        paint.shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: colors,
+        ).createShader(Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight));
+        
+        final barRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(x - barWidth/2, y, barWidth, barHeight),
+          const Radius.circular(6),
+        );
+        canvas.drawRRect(barRect, paint);
+        
+        if (firstPoint) {
+          path.moveTo(x, y + barHeight/2);
+          shadowPath.moveTo(x, y + barHeight/2);
+          firstPoint = false;
+        } else {
+          path.lineTo(x, y + barHeight/2);
+          shadowPath.lineTo(x, y + barHeight/2);
+        }
+        
+        final moodName = _getMoodName(mood.round());
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: moodName,
+            style: const TextStyle(
+              color: Color(0xFF3C5C5A),
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(x - textPainter.width/2, y - 20),
+        );
       }
+    }
+    // Complete shadow path
+    if (!firstPoint) {
+      shadowPath.lineTo(shadowPath.getBounds().right, size.height);
+      shadowPath.lineTo(shadowPath.getBounds().left, size.height);
+      shadowPath.close();
+      canvas.drawPath(shadowPath, shadowPaint);
       
-      final moodName = _getMoodName(mood);
+      canvas.drawPath(path, linePaint);
+      
+      for (int i = 0; i < moods.length; i++) {
+        final mood = moods[i].clamp(0.0, 5.0);
+        if (mood > 0) {
+          final x = (i + 0.5) * (size.width / moods.length);
+          final barHeight = (mood / 5.0) * maxHeight;
+          final y = size.height - barHeight;
+          
+          canvas.drawCircle(
+            Offset(x, y + barHeight/2),
+            4,
+            Paint()
+              ..color = Colors.white
+              ..style = PaintingStyle.fill,
+          );
+          canvas.drawCircle(
+            Offset(x, y + barHeight/2),
+            4,
+            Paint()
+              ..color = const Color(0xFF3C5C5A)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2,
+          );
+        }
+      }
+    }
+    
+    // Add period labels at bottom
+    _drawPeriodLabels(canvas, size);
+  }
+  
+  void _drawPeriodLabels(Canvas canvas, Size size) {
+    List<String> labels;
+    switch (period) {
+      case 'Weekly':
+        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        break;
+      case 'Monthly':
+        labels = ['W1', 'W2', 'W3', 'W4', 'W5'];
+        break;
+      case 'Yearly':
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        break;
+      default:
+        labels = [];
+    }
+    
+    for (int i = 0; i < labels.length && i < moods.length; i++) {
+      final x = (i + 0.5) * (size.width / moods.length);
       final textPainter = TextPainter(
         text: TextSpan(
-          text: moodName,
+          text: labels[i],
           style: const TextStyle(
-            color: Color(0xFF3C5C5A),
+            color: Color(0xFF666666),
             fontSize: 8,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -750,37 +938,7 @@ class MoodChartPainter extends CustomPainter {
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(x - textPainter.width/2, y - 20),
-      );
-    }
-    
-    shadowPath.lineTo(shadowPath.getBounds().right, size.height);
-    shadowPath.lineTo(shadowPath.getBounds().left, size.height);
-    shadowPath.close();
-    canvas.drawPath(shadowPath, shadowPaint);
-    
-    canvas.drawPath(path, linePaint);
-    
-    for (int i = 0; i < moods.length; i++) {
-      final mood = moods[i].clamp(0, 5);
-      final x = (i + 0.5) * (size.width / moods.length);
-      final barHeight = (mood / 5.0) * maxHeight;
-      final y = size.height - barHeight;
-      
-      canvas.drawCircle(
-        Offset(x, y + barHeight/2),
-        4,
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.fill,
-      );
-      canvas.drawCircle(
-        Offset(x, y + barHeight/2),
-        4,
-        Paint()
-          ..color = const Color(0xFF3C5C5A)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+        Offset(x - textPainter.width/2, size.height - 12),
       );
     }
   }
