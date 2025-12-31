@@ -78,12 +78,12 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    Builder(
-                      builder: (context) => IconButton(
+                     Builder(
+                      builder: (context) => HoverMenuButton(
                         onPressed: () => Scaffold.of(context).openDrawer(),
-                        icon: const Icon(Icons.menu, color: Colors.white),
-                      ),
+                      ), //HMB
                     ),
+
                     const Expanded(
                       child: Center(
                         child: Text(
@@ -341,6 +341,53 @@ class _FAQTileState extends State<_FAQTile> {
                 ),
               ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HoverMenuButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const HoverMenuButton({super.key, required this.onPressed});
+
+  @override
+  State<HoverMenuButton> createState() => _HoverMenuButtonState();
+}
+
+
+class _HoverMenuButtonState extends State<HoverMenuButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: _hover ? Colors.white.withOpacity(0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: _hover
+              ? [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.25),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : [],
+        ),
+        child: IconButton(
+          onPressed: widget.onPressed,
+          icon: Icon(
+            Icons.menu,
+            color: _hover ? Colors.white : Colors.white.withOpacity(0.85),
           ),
         ),
       ),
