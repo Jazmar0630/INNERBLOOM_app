@@ -63,7 +63,8 @@ class _MoodResultPageState extends State<MoodResultPage> {
 
     // Calculate mood with proper scoring for each question
     final adjustedScore = _calculateAdjustedScore();
-    final moodValue = ((adjustedScore / 4) * 5).round().clamp(1, 5);
+    final moodValue = adjustedScore.round().clamp(1, 5);
+
     
     try {
       await FirebaseFirestore.instance
@@ -87,17 +88,25 @@ class _MoodResultPageState extends State<MoodResultPage> {
   double _calculateAdjustedScore() {
     final d = widget.data;
     
-    // Page 1 questions:
-    final stressScore = 4 - d.q1;      // Lower stress = better (invert)
-    final sleepScore = d.q2;           // Higher sleep quality = better (keep)
-    final focusScore = d.q3;           // Higher focus = better (keep)
+
+  // If your answers are 1..5:
+  double score(double answer, {required bool reverse}) {
+    if (reverse) return 6 - answer; // Step 2: invert for reverse questions
+    return answer;                  // Step 2: keep for normal questions
+  }
+
+   // ✅ Set which questions are reverse (negative wording)
+  // Example based on your comments:
+  final q1 = score(d.q1, reverse: true);  // Stress (lower stress = better)
+  final q2 = score(d.q2, reverse: false); // Sleep quality (higher = better)
+  final q3 = score(d.q3, reverse: false); // Focus (higher = better)
+
+  final q4 = score(d.q4, reverse: true);  // Overwhelmed (lower = better)
+  final q5 = score(d.q5, reverse: true);  // Sleep issues (lower = better)
+  final q6 = score(d.q6, reverse: true);  // Distraction (lower = better)
     
-    // Page 2 questions (all negative - lower = better):
-    final overwhelmedScore = 4 - d.q4; // Lower overwhelmed = better (invert)
-    final sleepIssuesScore = 4 - d.q5; // Lower sleep issues = better (invert)
-    final distractionScore = 4 - d.q6; // Lower distraction = better (invert)
-    
-    return (stressScore + sleepScore + focusScore + overwhelmedScore + sleepIssuesScore + distractionScore) / 6;
+      // Happiness average (1..5)
+        return (q1 + q2 + q3 + q4 + q5 + q6) / 6.0;
   }
 
   double get _totalScore {
@@ -106,30 +115,31 @@ class _MoodResultPageState extends State<MoodResultPage> {
   }
 
   double get _avgScore => _totalScore / 6;
+  double get _happinessAvg => _calculateAdjustedScore();
 
   String get _headline {
-    final a = _avgScore;
-    if (a >= 3.0) return "You've been under a lot of pressure lately.";
-    if (a >= 2.0) return "You might be feeling a bit stressed or tired.";
+    final a = _happinessAvg;
+    if (a <= 2.0) return "You've been under a lot of pressure lately.";
+    if (a <= 3.0) return "You might be feeling a bit stressed or tired.";
     return "You seem fairly okay today — keep it up.";
   }
 
   String get _subtext {
-    final a = _avgScore;
-    if (a >= 3.0) {
+    final a = _happinessAvg;
+    if (a <= 2.0) {
       return "Try something gentle and calming. Small steps count, and you don't need to handle everything at once.";
     }
-    if (a >= 2.0) {
+    if (a <= 3.0) {
       return "A short reset can help. Try breathing slowly, get some water, and take a quick break.";
     }
     return "Still, it's good to do a short relaxation to stay balanced and focused.";
   }
 
   String _detectedMoodLabel() {
-    final a = _avgScore;
-    if (a >= 3.0) return "overwhelmed";
-    if (a >= 2.0) return "stressed";
-    if (a >= 1.2) return "tired";
+    final a = _happinessAvg;
+    if (a <= 2.0) return "overwhelmed";
+    if (a <= 3.0) return "stressed";
+    if (a <= 3.8) return "tired";
     return "calm";
   }
 
