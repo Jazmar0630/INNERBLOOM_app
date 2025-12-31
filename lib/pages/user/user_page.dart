@@ -214,13 +214,23 @@ class _UserPageState extends State<UserPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'user',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        stream: _userDocStream(),
+                        builder: (context, snapshot) {
+                          String username = 'user';
+                          if (snapshot.hasData && snapshot.data!.exists) {
+                            final data = snapshot.data!.data();
+                            username = data?['username'] ?? 'user';
+                          }
+                          return Text(
+                            username,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 6),
                       Text(
