@@ -1,3 +1,4 @@
+// lib/pages/home/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,28 +32,47 @@ class _HomePageState extends State<HomePage> {
   // ✅ Live user document stream (auto updates header when name changes)
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      // return an empty stream if not logged in
-      return const Stream.empty();
-    }
+    if (uid == null) return const Stream.empty();
     return FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
   }
 
-  // ✅ Pick the best display name
+  // ✅ Pick best display name
   String _pickName(Map<String, dynamic>? data) {
-    if (data == null) return 'User';
+    if (data != null) {
+      final name = (data['name'] ?? '').toString().trim();
+      if (name.isNotEmpty) return name;
 
-    final name = (data['name'] ?? '').toString().trim();
-    if (name.isNotEmpty) return name;
+      final username = (data['username'] ?? '').toString().trim();
+      if (username.isNotEmpty) return username;
+    }
 
-    final username = (data['username'] ?? '').toString().trim();
-    if (username.isNotEmpty) return username;
+    // fallback: auth displayName
+    final dn = FirebaseAuth.instance.currentUser?.displayName ?? '';
+    if (dn.trim().isNotEmpty) return dn.trim();
 
-    // fallback: email prefix if no name fields exist
+    // fallback: email prefix
     final email = FirebaseAuth.instance.currentUser?.email ?? '';
     if (email.contains('@')) return email.split('@').first;
 
     return 'User';
+  }
+
+  void _onNavTap(int i) {
+    setState(() => _navIndex = i);
+
+    if (i == 1) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
+      );
+    } else if (i == 2) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const RelaxationPage()),
+      );
+    } else if (i == 3) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const UserPage()),
+      );
+    }
   }
 
   @override
@@ -60,26 +80,11 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBody: true,
       drawer: const AppDrawer(),
+
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
-        onTap: (i) {
-          setState(() => _navIndex = i);
-
-          if (i == 1) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const OnboardingIntroPage()),
-            );
-          } else if (i == 2) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const RelaxationPage()),
-            );
-          } else if (i == 3) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const UserPage()),
-            );
-          }
-        },
+        onTap: _onNavTap,
         selectedItemColor: const Color(0xFF25424F),
         unselectedItemColor: Colors.grey[500],
         items: const [
@@ -89,6 +94,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
         ],
       ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -101,6 +107,7 @@ class _HomePageState extends State<HomePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
+              // top bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -113,12 +120,13 @@ class _HomePageState extends State<HomePage> {
                   const CircleAvatar(
                     radius: 18,
                     backgroundImage: AssetImage('assets/avatar_placeholder1.png'),
-                  )
+                  ),
                 ],
               ),
+
               const SizedBox(height: 8),
 
-              // ✅ Header: Live username from Firestore
+              // ✅ Header: live username from Firestore
               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: _userDocStream(),
                 builder: (context, snapshot) {
@@ -127,7 +135,6 @@ class _HomePageState extends State<HomePage> {
                   if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
                     display = _pickName(snapshot.data!.data());
                   } else {
-                    // fallback even if doc not created yet
                     display = _pickName(null);
                   }
 
@@ -147,8 +154,10 @@ class _HomePageState extends State<HomePage> {
                 'How do you feel today?',
                 style: TextStyle(fontSize: 16, color: Colors.white70, height: 1.2),
               ),
+
               const SizedBox(height: 16),
 
+              // mood chips
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -200,9 +209,13 @@ class _HomePageState extends State<HomePage> {
               ),
 
               const SizedBox(height: 20),
-              const Text('Not sure how do you feel today?', style: TextStyle(color: Colors.white70)),
+              const Text(
+                'Not sure how do you feel today?',
+                style: TextStyle(color: Colors.white70),
+              ),
               const SizedBox(height: 10),
 
+              // CTA
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -225,6 +238,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 20),
 
+              // recommendation cards
               _RecoCard(
                 title: 'Bring your focus back',
                 subtitle: 'Listen to our most relaxing songs and gain back your focus',
@@ -239,7 +253,9 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
+
               const SizedBox(height: 14),
+
               _RecoCard(
                 title: 'Quiet the overthinking',
                 subtitle: 'Watch calming visuals and guided talks that help clear your busy mind',
@@ -288,7 +304,7 @@ class _MoodChipState extends State<_MoodChip> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeInOut,
           child: Column(
             children: [
@@ -296,35 +312,37 @@ class _MoodChipState extends State<_MoodChip> {
                 width: 62,
                 height: 62,
                 decoration: BoxDecoration(
-                  color: _isHovered 
+                  color: _isHovered
                       ? Colors.white.withOpacity(0.25)
                       : Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: _isHovered 
+                    color: _isHovered
                         ? Colors.white.withOpacity(0.6)
                         : Colors.white.withOpacity(0.15),
                     width: _isHovered ? 2.5 : 1.5,
                   ),
-                  boxShadow: _isHovered ? [
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.2),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                    ),
-                  ] : [],
+                  boxShadow: _isHovered
+                      ? [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.2),
+                            blurRadius: 12,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : [],
                 ),
                 child: Icon(
-                  widget.icon, 
-                  color: Colors.white, 
+                  widget.icon,
+                  color: Colors.white,
                   size: _isHovered ? 30 : 28,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                widget.label, 
+                widget.label,
                 style: TextStyle(
-                  color: Colors.white, 
+                  color: Colors.white,
                   fontSize: _isHovered ? 13 : 12,
                   fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
                 ),
