@@ -36,6 +36,7 @@ class _UserPageState extends State<UserPage> {
     
     if (_uid != null) {
       _autoCheckIn();
+      _ensureUsernameExists(); // Add this to set username if missing
     }
 
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -46,8 +47,30 @@ class _UserPageState extends State<UserPage> {
       });
       if (_uid != null) {
         _autoCheckIn();
+        _ensureUsernameExists();
       }
     });
+  }
+
+  // Add this method to ensure username exists
+  void _ensureUsernameExists() async {
+    if (_uid == null) return;
+    
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(_uid!).get();
+      if (!doc.exists || doc.data()?['username'] == null) {
+        // Set username to "ammar" or get from Firebase Auth
+        final currentUser = FirebaseAuth.instance.currentUser;
+        final username = currentUser?.displayName ?? 'ammar'; // Change 'ammar' to your desired username
+        
+        await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
+          'username': username,
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      print('Error ensuring username: $e');
+    }
   }
 
   void _autoCheckIn() async {
@@ -57,7 +80,6 @@ class _UserPageState extends State<UserPage> {
     
     try {
       await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
-        'username': 'user',
         'activeDays.$today': true,
         'lastActiveAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -90,8 +112,12 @@ class _UserPageState extends State<UserPage> {
       });
       setState(() => _isCheckedIn = true);
     } catch (e) {
+      // Get current user's username from Firebase Auth or use default
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final username = currentUser?.displayName ?? 'ammar'; // Change 'ammar' to your desired username
+      
       await FirebaseFirestore.instance.collection('users').doc(_uid!).set({
-        'username': 'user',
+        'username': username,
         'createdAt': FieldValue.serverTimestamp(),
         'activeDays': {
           'mon': today == 'mon',
@@ -221,6 +247,9 @@ class _UserPageState extends State<UserPage> {
                           if (snapshot.hasData && snapshot.data!.exists) {
                             final data = snapshot.data!.data();
                             username = data?['username'] ?? 'user';
+                            // Debug: Print what's in Firestore
+                            print('Firestore data: $data');
+                            print('Username from Firestore: ${data?['username']}');
                           }
                           return Text(
                             username,
