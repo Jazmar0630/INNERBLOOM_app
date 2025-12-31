@@ -61,7 +61,9 @@ class _MoodResultPageState extends State<MoodResultPage> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final moodValue = (_avgScore * 1.25).round().clamp(1, 5);
+    // Calculate mood with proper scoring for each question
+    final adjustedScore = _calculateAdjustedScore();
+    final moodValue = ((adjustedScore / 4) * 5).round().clamp(1, 5);
     
     try {
       await FirebaseFirestore.instance
@@ -71,6 +73,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
           .add({
         'mood': moodValue,
         'avgScore': _avgScore,
+        'adjustedScore': adjustedScore,
         'totalScore': _totalScore,
         'detectedMood': _detectedMoodLabel(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -78,6 +81,22 @@ class _MoodResultPageState extends State<MoodResultPage> {
     } catch (e) {
       debugPrint('Failed to save mood: $e');
     }
+  }
+
+  double _calculateAdjustedScore() {
+    final d = widget.data;
+    
+    // Page 1 questions:
+    final stressScore = 4 - d.q1;      // Lower stress = better (invert)
+    final sleepScore = d.q2;           // Higher sleep quality = better (keep)
+    final focusScore = d.q3;           // Higher focus = better (keep)
+    
+    // Page 2 questions (all negative - lower = better):
+    final overwhelmedScore = 4 - d.q4; // Lower overwhelmed = better (invert)
+    final sleepIssuesScore = 4 - d.q5; // Lower sleep issues = better (invert)
+    final distractionScore = 4 - d.q6; // Lower distraction = better (invert)
+    
+    return (stressScore + sleepScore + focusScore + overwhelmedScore + sleepIssuesScore + distractionScore) / 6;
   }
 
   double get _totalScore {

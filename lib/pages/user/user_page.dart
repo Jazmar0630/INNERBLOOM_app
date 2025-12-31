@@ -617,11 +617,11 @@ class _UserPageState extends State<UserPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: const [
-                              _MoodLevelLabel('Happy'),
-                              _MoodLevelLabel('Good'),
-                              _MoodLevelLabel('Moderate'),
-                              _MoodLevelLabel('Sad'),
                               _MoodLevelLabel('Awful'),
+                              _MoodLevelLabel('Sad'),
+                              _MoodLevelLabel('Moderate'),
+                              _MoodLevelLabel('Good'),
+                              _MoodLevelLabel('Happy'),
                             ],
                           ),
                           const SizedBox(width: 12),
