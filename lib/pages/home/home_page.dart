@@ -262,7 +262,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _MoodChip extends StatelessWidget {
+class _MoodChip extends StatefulWidget {
   const _MoodChip({
     required this.icon,
     required this.label,
@@ -274,24 +274,61 @@ class _MoodChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_MoodChip> createState() => _MoodChipState();
+}
+
+class _MoodChipState extends State<_MoodChip> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 62,
-            height: 62,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: Icon(icon, color: Colors.white, size: 28),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          transform: Matrix4.identity()..scale(_isHovered ? 1.05 : 1.0),
+          child: Column(
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: _isHovered 
+                    ? Colors.white.withOpacity(0.20)
+                    : Colors.white.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _isHovered ? Colors.white60 : Colors.white24,
+                  ),
+                  boxShadow: _isHovered ? [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ] : null,
+                ),
+                child: Icon(
+                  widget.icon, 
+                  color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9), 
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.label, 
+                style: TextStyle(
+                  color: _isHovered ? Colors.white : Colors.white70, 
+                  fontSize: 12,
+                  fontWeight: _isHovered ? FontWeight.w500 : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
+        ),
       ),
     );
   }
