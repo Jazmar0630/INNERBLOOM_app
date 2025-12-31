@@ -288,8 +288,8 @@ class _MoodChipState extends State<_MoodChip> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: Matrix4.identity()..scale(_isHovered ? 1.05 : 1.0),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
           child: Column(
             children: [
               Container(
@@ -297,33 +297,36 @@ class _MoodChipState extends State<_MoodChip> {
                 height: 62,
                 decoration: BoxDecoration(
                   color: _isHovered 
-                    ? Colors.white.withOpacity(0.20)
-                    : Colors.white.withOpacity(0.10),
+                      ? Colors.white.withOpacity(0.25)
+                      : Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: _isHovered ? Colors.white60 : Colors.white24,
+                    color: _isHovered 
+                        ? Colors.white.withOpacity(0.6)
+                        : Colors.white.withOpacity(0.15),
+                    width: _isHovered ? 2.5 : 1.5,
                   ),
                   boxShadow: _isHovered ? [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      color: Colors.white.withOpacity(0.2),
+                      blurRadius: 12,
+                      spreadRadius: 1,
                     ),
-                  ] : null,
+                  ] : [],
                 ),
                 child: Icon(
                   widget.icon, 
-                  color: _isHovered ? Colors.white : Colors.white.withOpacity(0.9), 
-                  size: 28,
+                  color: Colors.white, 
+                  size: _isHovered ? 30 : 28,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 widget.label, 
                 style: TextStyle(
-                  color: _isHovered ? Colors.white : Colors.white70, 
-                  fontSize: 12,
-                  fontWeight: _isHovered ? FontWeight.w500 : FontWeight.normal,
+                  color: Colors.white, 
+                  fontSize: _isHovered ? 13 : 12,
+                  fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ],
