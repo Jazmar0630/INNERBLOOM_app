@@ -26,7 +26,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
           ),
-          ListTile(
+          _HoverListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Settings'),
             onTap: () {
@@ -37,7 +37,7 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          ListTile(
+          _HoverListTile(
             leading: const Icon(Icons.help_outline),
             title: const Text('Help & Support'),
             onTap: () {
@@ -48,7 +48,7 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          ListTile(
+          _HoverListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
             title: const Text('Privacy Policy'),
             onTap: () {
@@ -61,7 +61,7 @@ class AppDrawer extends StatelessWidget {
           ),
           const Divider(height:40),
           const SizedBox(height: 5),
-          ListTile(
+          _HoverListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
             title: const Text('Exit App', style: TextStyle(color: Colors.red)),
             onTap: () {
@@ -69,6 +69,42 @@ class AppDrawer extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HoverListTile extends StatefulWidget {
+  final Widget leading;
+  final Widget title;
+  final VoidCallback onTap;
+
+  const _HoverListTile({
+    required this.leading,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverListTile> createState() => _HoverListTileState();
+}
+
+class _HoverListTileState extends State<_HoverListTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        color: _isHovered ? Colors.grey.withOpacity(0.1) : Colors.transparent,
+        child: ListTile(
+          leading: widget.leading,
+          title: widget.title,
+          onTap: widget.onTap,
+        ),
       ),
     );
   }

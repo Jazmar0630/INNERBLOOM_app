@@ -657,7 +657,6 @@ class _UserPageState extends State<UserPage> {
                               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                                 stream: _moodStream(),
                                 builder: (context, snapshot) {
-                                  print('StreamBuilder rebuild - hasData: ${snapshot.hasData}, docs: ${snapshot.data?.docs.length}');
                                   if (_uid == null) {
                                     return const Center(
                                       child: Text(
@@ -710,16 +709,18 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
-                                  // Debug: Print mood data
-                                  final docs = snapshot.data!.docs;
-                                  final rawMoods = docs.map((d) => d.data()['mood']).toList();
-                                  print('Raw mood data: $rawMoods');
+                                  final allMoods = snapshot.data!.docs
+                                      .map((d) {
+                                        final v = d.data()['mood'];
+                                        return (v is int) ? v.toDouble() : 0.0;
+                                      })
+                                      .toList();
                                   
-                                  // Aggregate mood data
-                                  final aggregatedMoods = _aggregateMoodData(snapshot.data!.docs);
-                                  print('Aggregated moods: $aggregatedMoods');
+                                  final displayLimit = _selectedPeriod == 'Weekly' ? 7 : 
+                                                     _selectedPeriod == 'Monthly' ? 30 : 50;
+                                  final moods = allMoods.take(displayLimit).toList().reversed.toList();
                                   
-                                  if (aggregatedMoods.isEmpty || aggregatedMoods.every((m) => m == 0)) {
+                                  if (moods.isEmpty) {
                                     return const Center(
                                       child: Text(
                                         'No mood data for selected period',
@@ -728,7 +729,7 @@ class _UserPageState extends State<UserPage> {
                                     );
                                   }
                                   return CustomPaint(
-                                    painter: MoodChartPainter(aggregatedMoods, _selectedPeriod),
+                                    painter: MoodChartPainter(moods, _selectedPeriod),
                                     child: Container(),
                                   );
                                 },
@@ -738,16 +739,6 @@ class _UserPageState extends State<UserPage> {
                         ],
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Temporary test button - remove after testing
-                ElevatedButton(
-                  onPressed: _addTestMoods,
-                  child: Text('Add Test Moods (Happy/Good)'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 24),

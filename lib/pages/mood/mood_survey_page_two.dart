@@ -27,43 +27,11 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(5, (index) {
             final isSelected = value.round() == index;
-            return GestureDetector(
+            return _HoverAnswerOption(
+              index: index,
+              isSelected: isSelected,
+              label: options[index],
               onTap: () => onChanged(index.toDouble()),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected ? Colors.white : Colors.transparent,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        (index + 1).toString(),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? const Color(0xFF25424F) : Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    options[index],
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isSelected ? Colors.white : Colors.white70,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
             );
           }),
         ),
@@ -161,6 +129,77 @@ class _MoodSurveyPageTwoState extends State<MoodSurveyPageTwo> {
               const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HoverAnswerOption extends StatefulWidget {
+  final int index;
+  final bool isSelected;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HoverAnswerOption({
+    required this.index,
+    required this.isSelected,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverAnswerOption> createState() => _HoverAnswerOptionState();
+}
+
+class _HoverAnswerOptionState extends State<_HoverAnswerOption> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.isSelected ? Colors.white : Colors.transparent,
+                border: Border.all(
+                  color: _isHovered ? Colors.white : Colors.white.withOpacity(0.8),
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  (widget.index + 1).toString(),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isSelected 
+                        ? const Color(0xFF25424F) 
+                        : _isHovered ? Colors.white : Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.isSelected 
+                    ? Colors.white 
+                    : _isHovered ? Colors.white : Colors.white70,
+                fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );
