@@ -301,6 +301,11 @@ class _UserPageState extends State<UserPage> {
       });
       await Future.delayed(Duration(milliseconds: 100)); // Small delay
     }
+    
+    // Force refresh the UI
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onNavTap(int index) {
@@ -652,6 +657,7 @@ class _UserPageState extends State<UserPage> {
                               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                                 stream: _moodStream(),
                                 builder: (context, snapshot) {
+                                  print('StreamBuilder rebuild - hasData: ${snapshot.hasData}, docs: ${snapshot.data?.docs.length}');
                                   if (_uid == null) {
                                     return const Center(
                                       child: Text(
@@ -704,8 +710,14 @@ class _UserPageState extends State<UserPage> {
                                       ),
                                     );
                                   }
+                                  // Debug: Print mood data
+                                  final docs = snapshot.data!.docs;
+                                  final rawMoods = docs.map((d) => d.data()['mood']).toList();
+                                  print('Raw mood data: $rawMoods');
+                                  
                                   // Aggregate mood data
                                   final aggregatedMoods = _aggregateMoodData(snapshot.data!.docs);
+                                  print('Aggregated moods: $aggregatedMoods');
                                   
                                   if (aggregatedMoods.isEmpty || aggregatedMoods.every((m) => m == 0)) {
                                     return const Center(
