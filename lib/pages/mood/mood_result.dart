@@ -23,7 +23,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
       title: 'Ocean waves',
       subtitle: 'Gentle rolling ocean and wave sounds',
       icon: Icons.waves,
-      videoId: 'dQw4w9WgXcQ',
+      videoId: 'cB_CwY9dhrA',
     ),
     _RelaxItem(
       title: 'Peaceful Piano & Rain',
@@ -47,7 +47,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
       title: 'Surah Ar-Rahman',
       subtitle: 'Recitation by Mishary Al Afasy',
       icon: Icons.menu_book,
-      videoId: 'dQw4w9WgXcQ',
+      videoId: 'H4N5eFbLl9A',
     ),
   ];
 
