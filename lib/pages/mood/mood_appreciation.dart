@@ -70,7 +70,7 @@ class _MoodAppreciationPageState extends State<MoodAppreciationPage> {
                         ),
                       ],
                     ),
-                  ),
+                  ),  
 
                   const Spacer(),
 
