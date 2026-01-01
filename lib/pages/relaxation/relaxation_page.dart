@@ -82,14 +82,14 @@ class _RelaxationPageState extends State<RelaxationPage> {
       title: 'Morning Energy Boost',
       subtitle: 'Uplifting music to start your day',
       icon: Icons.wb_sunny,
-      videoId: '9bZkp7q19f0',
+      videoId: 'uT6ASPy2Dbs',
       category: 'Motivation & energy',
     ),
     _RelaxItem(
       title: 'Power Through Your Day',
       subtitle: 'Motivational speech and energetic beats',
       icon: Icons.bolt,
-      videoId: '3JZ_D3ELwOQ',
+      videoId: 'HgiiY9TLtX8',
       category: 'Motivation & energy',
     ),
     _RelaxItem(
