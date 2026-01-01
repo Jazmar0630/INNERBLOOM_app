@@ -44,7 +44,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
                   const SizedBox(height: 20),
 
-                  // NEW CODE - USE THIS:
+                  // APP LOGO
                     SizedBox(
                       width: 280,
                       height: 280,
