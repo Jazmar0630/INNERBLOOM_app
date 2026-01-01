@@ -136,7 +136,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
     if (a <= 4.0) {
       return "Still, it's good to do a short relaxation to stay balanced and focused..";
     }
-    return "That’s great! Even when feeling good, taking time to relax can help maintain your positive mood.";
+    return "Well done! Even when feeling good, taking time to relax can help maintain your positive mood.";
   }
 
   String _detectedMoodLabel() {
