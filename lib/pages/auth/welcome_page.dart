@@ -44,16 +44,15 @@ class _WelcomePageState extends State<WelcomePage> {
 
                   const SizedBox(height: 20),
 
-                  // CIRCLE ICON (MOVED HERE)
-                  Container(
-                  width: 220,
-                  height: 220,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
-                          ),
+                  // NEW CODE - USE THIS:
+                    SizedBox(
+                      width: 280,
+                      height: 280,
+                      child: Image.asset(
+                        'assets/Innerbloom.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
 
                           const SizedBox(height: 32),
 
