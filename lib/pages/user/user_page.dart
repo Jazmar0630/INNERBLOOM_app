@@ -596,7 +596,8 @@ class _UserPageState extends State<UserPage> {
                                           ? 30
                                           : 50;
 
-                                  final moods = allMoods.take(displayLimit).toList().reversed.toList();
+                                  final moods = allMoods.take(displayLimit).toList(); // oldest -> latest
+
 
                                   if (moods.isEmpty) {
                                     return const Center(
