@@ -29,7 +29,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
       title: 'Peaceful Piano & Rain',
       subtitle: 'Lo-fi piano with soft background rain',
       icon: Icons.piano,
-      videoId: '9bZkp7q19f0',
+      videoId: 'o8GrqUSdzi0',
     ),
     _RelaxItem(
       title: 'The Mindful Kind',
@@ -41,7 +41,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
       title: 'Forest Birds & Wind',
       subtitle: 'Soft wind and forest ambience',
       icon: Icons.park,
-      videoId: 'dQw4w9WgXcQ',
+      videoId: 'XxP8kxUn5bc',
     ),
     _RelaxItem(
       title: 'Surah Ar-Rahman',

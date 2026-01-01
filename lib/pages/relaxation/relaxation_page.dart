@@ -45,14 +45,14 @@ class _RelaxationPageState extends State<RelaxationPage> {
       title: 'Deep Breathing Exercise',
       subtitle: 'Calm your anxiety with guided breathing',
       icon: Icons.air,
-      videoId: '9bZkp7q19f0',
+      videoId: 'LiUnFJ8P4gM',
       category: 'Anxiety reliefs',
     ),
     _RelaxItem(
       title: 'Peaceful Garden Sounds',
       subtitle: 'Birds chirping in a serene garden',
       icon: Icons.park,
-      videoId: '3JZ_D3ELwOQ',
+      videoId: 'euEwKtP5CG4',
       category: 'Anxiety reliefs',
     ),
 
@@ -67,14 +67,14 @@ class _RelaxationPageState extends State<RelaxationPage> {
       title: 'Peaceful Piano & Rain',
       subtitle: 'Lo-fi piano with soft background rain',
       icon: Icons.piano,
-      videoId: '9bZkp7q19f0',
+      videoId: 'o8GrqUSdzi0',
       category: 'Overthinking detox',
     ),
     _RelaxItem(
       title: 'Mind Clarity Meditation',
       subtitle: 'Clear your thoughts and find peace',
       icon: Icons.spa,
-      videoId: 'dQw4w9WgXcQ',
+      videoId: 'FJG14EysFIA',
       category: 'Overthinking detox',
     ),
 
