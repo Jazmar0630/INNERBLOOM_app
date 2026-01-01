@@ -6,6 +6,9 @@ import '../relaxation/relaxation_page.dart';
 import '../user/user_page.dart';
 import '../home/home_page.dart';
 import '../widgets/app_drawer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -295,6 +298,31 @@ class _HoverProfileSection extends StatefulWidget {
 
 class _HoverProfileSectionState extends State<_HoverProfileSection> {
   bool _isHovered = false;
+  String _username = 'Loading...';
+
+@override
+void initState() {
+  super.initState();
+  _loadUsername();
+}
+
+Future<void> _loadUsername() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .get();
+
+  if (doc.exists) {
+    setState(() {
+      _username = doc.data()?['username'] ?? 'User';
+    });
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -331,14 +359,15 @@ class _HoverProfileSectionState extends State<_HoverProfileSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Ahmad Syawqi',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
+                      Text(
+                        _username,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _isHovered ? Colors.white : Colors.white.withOpacity(0.95),
+                        ),
                       ),
-                    ),
+                      
                     const SizedBox(height: 4),
                     Text(
                       'Edit personal details',

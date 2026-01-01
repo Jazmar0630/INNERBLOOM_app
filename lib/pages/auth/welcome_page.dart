@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'signup_page.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  bool _isHovered = false; // ✅ put here
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +51,12 @@ class WelcomePage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
                     shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
-    ),
+                            ),
+                            child: const Icon(Icons.self_improvement, size: 100, color: Colors.white),
+                          ),
 
-    const SizedBox(height: 32),
+                          const SizedBox(height: 32),
 
-                   
-
-                  const SizedBox(height: 30),
 
                   // Description text
                   const Text(
@@ -76,8 +80,15 @@ class WelcomePage extends StatelessWidget {
 
                   const Spacer(),
 
-                  // Get Started Button
-                  ElevatedButton(
+                  // Get Started Button with hovering effect 
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => _isHovered = true),
+                    onExit: (_) => setState(() => _isHovered = false),
+                    child: AnimatedScale(
+                    scale: _isHovered ? 1.05 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                  child: ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -99,6 +110,8 @@ class WelcomePage extends StatelessWidget {
                         color: Colors.white,
                         letterSpacing: 1.2,
                       ),
+                    ),
+                  ),
                     ),
                   ),
 

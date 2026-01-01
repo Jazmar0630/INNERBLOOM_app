@@ -29,7 +29,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
       title: 'Peaceful Piano & Rain',
       subtitle: 'Lo-fi piano with soft background rain',
       icon: Icons.piano,
-      videoId: '9bZkp7q19f0',
+      videoId: 'o8GrqUSdzi0',
     ),
     _RelaxItem(
       title: 'The Mindful Kind',
@@ -41,7 +41,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
       title: 'Forest Birds & Wind',
       subtitle: 'Soft wind and forest ambience',
       icon: Icons.park,
-      videoId: 'dQw4w9WgXcQ',
+      videoId: 'XxP8kxUn5bc',
     ),
     _RelaxItem(
       title: 'Surah Ar-Rahman',
@@ -74,7 +74,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
           .add({
         'mood': moodValue,
         'avgScore': _avgScore,
-        'adjustedScore': adjustedScore,
+        'adjustedScore': _happinessAvg,
         'totalScore': _totalScore,
         'detectedMood': _detectedMoodLabel(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -121,7 +121,8 @@ class _MoodResultPageState extends State<MoodResultPage> {
     final a = _happinessAvg;
     if (a <= 2.0) return "You've been under a lot of pressure lately.";
     if (a <= 3.0) return "You might be feeling a bit stressed or tired.";
-    return "You seem fairly okay today — keep it up.";
+    if (a <= 4.0) return "You seem fairly okay today — keep it up..";
+    return " You’re feeling great today! Keep maintaining that balance.";
   }
 
   String get _subtext {
@@ -132,14 +133,17 @@ class _MoodResultPageState extends State<MoodResultPage> {
     if (a <= 3.0) {
       return "A short reset can help. Try breathing slowly, get some water, and take a quick break.";
     }
-    return "Still, it's good to do a short relaxation to stay balanced and focused.";
+    if (a <= 4.0) {
+      return "Still, it's good to do a short relaxation to stay balanced and focused..";
+    }
+    return "Well done! Even when feeling good, taking time to relax can help maintain your positive mood.";
   }
 
   String _detectedMoodLabel() {
     final a = _happinessAvg;
     if (a <= 2.0) return "overwhelmed";
     if (a <= 3.0) return "stressed";
-    if (a <= 3.8) return "tired";
+    if (a <= 4.0) return "tired";
     return "calm";
   }
 
@@ -160,7 +164,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '${value.toStringAsFixed(0)} / 4',
+                '${value.toStringAsFixed(0)} / 5',
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -309,12 +313,12 @@ class _MoodResultPageState extends State<MoodResultPage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          "Mood: ${_detectedMoodLabel()}  •  Score: ${_avgScore.toStringAsFixed(1)} / 4",
+                          "Mood: ${_detectedMoodLabel()}  •  Score: ${_happinessAvg.toStringAsFixed(1)} / 6",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                          ),
+                          ),    
                         ),
                       ),
                     ],

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../drawer/privacy_policy.dart';
+
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -19,6 +21,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
 
+  bool _isSignUpHovered = false;
   bool agreeToPolicy = false;
   bool _loading = false;
 
@@ -103,10 +106,10 @@ class _SignUpPageState extends State<SignUpPage> {
       // 3) Create user document in Firestore (users/{uid})
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
-      
+
         // ✅ store both to avoid mismatch across pages
-        'name': username,       // some pages might read "name"
-        'username': username,   // some pages might read "username"
+        'name': username, // some pages might read "name"
+        'username': username, // some pages might read "username"
         'isNewUser': true,
 
         'email': email,
@@ -247,41 +250,72 @@ class _SignUpPageState extends State<SignUpPage> {
                         'I have read the ',
                         style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
                       ),
-                      const Text(
+                        TextButton(
+                            onPressed: _loading
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                                    );
+                                  },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                       ),
+
+                      child: const Text(
                         'privacy policy',
                         style: TextStyle(
                           color: Color.fromARGB(255, 86, 91, 255),
                           decoration: TextDecoration.underline,
                         ),
                       ),
+                  )
                     ],
                   ),
                   const SizedBox(height: 12),
 
-                  // Sign Up Button
-                  ElevatedButton(
-                    onPressed: _loading ? null : _signup,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3C5C5A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                  // Sign Up Button (with hover effect)
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => _isSignUpHovered = true),
+                    onExit: (_) => setState(() => _isSignUpHovered = false),
+                    child: AnimatedScale(
+                      scale: _isSignUpHovered ? 1.03 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _signup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isSignUpHovered
+                              ? const Color(0xFF2F4F4D)
+                              : const Color(0xFF3C5C5A),
+                          elevation: _isSignUpHovered ? 10 : 4,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'SIGN UP',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  letterSpacing: 1,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
-                    child: _loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'SIGN UP',
-                            style: TextStyle(
-                              color: Colors.white,
-                              letterSpacing: 1,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                   ),
 
                   const SizedBox(height: 20),
@@ -292,7 +326,8 @@ class _SignUpPageState extends State<SignUpPage> {
                       Expanded(child: Divider(color: Colors.white38)),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text('or', style: TextStyle(color: Colors.white70)),
+                        child: Text('or',
+                            style: TextStyle(color: Colors.white70)),
                       ),
                       Expanded(child: Divider(color: Colors.white38)),
                     ],
@@ -320,10 +355,13 @@ class _SignUpPageState extends State<SignUpPage> {
                       children: [
                         const Text(
                           'Already have an account?',
-                          style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
+                          style:
+                              TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
                         ),
-                        InkWell(
-                          onTap: _loading
+
+                        // ✅ FIXED: proper clickable "Log in" link (darken on press/hover)
+                        TextButton(
+                          onPressed: _loading
                               ? null
                               : () {
                                   Navigator.pushReplacement(
@@ -332,6 +370,11 @@ class _SignUpPageState extends State<SignUpPage> {
                                         builder: (_) => const LoginPage()),
                                   );
                                 },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           child: const Text(
                             'Log in',
                             style: TextStyle(
