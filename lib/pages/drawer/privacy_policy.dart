@@ -8,6 +8,7 @@ import '../widgets/app_drawer.dart';
 import 'settings_page.dart';
 import 'help_and_support_page.dart';
 
+
 class PrivacyPolicyPage extends StatefulWidget {
   const PrivacyPolicyPage({super.key});
 

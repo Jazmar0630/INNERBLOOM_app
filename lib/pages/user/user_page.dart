@@ -733,6 +733,23 @@ class MoodChartPainter extends CustomPainter {
   final List<double> moods;
   final String period;
 
+String _moodLabel(double mood) {
+  final m = mood.round();
+  switch (m) {
+    case 5:
+      return 'Happy';
+    case 4:
+      return 'Good';
+    case 3:
+      return 'Moderate';
+    case 2:
+      return 'Sad';
+    case 1:
+      return 'Awful';
+    default:
+      return '';
+  }
+}
   MoodChartPainter(this.moods, this.period);
 
   @override
@@ -779,6 +796,35 @@ class MoodChartPainter extends CustomPainter {
           const Radius.circular(6),
         );
         canvas.drawRRect(barRect, paint);
+          // ✅ put label HERE (after draw bar, before path stuff)
+            if (i == moods.length - 1) {
+            final label = _moodLabel(mood);
+
+                if (label.isNotEmpty) {
+                  final textPainter = TextPainter(
+                    text: TextSpan(
+                      text: label,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF3C5C5A),
+                      ),
+                    ),
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.center,
+                  );
+
+                  textPainter.layout();
+
+                  // position text slightly ABOVE the bar
+                  final textOffset = Offset(
+                    x - textPainter.width / 2,
+                    y - textPainter.height - 6,
+                  );
+
+                  textPainter.paint(canvas, textOffset);
+                }
+             }
 
         if (firstPoint) {
           path.moveTo(x, y + barHeight / 2);

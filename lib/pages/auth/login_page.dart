@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _password = TextEditingController();
 
   bool _loading = false;
+  bool _isLoginHovered = false;
 
   @override
   void dispose() {
@@ -143,27 +144,44 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Log in button
-                  ElevatedButton(
-                    onPressed: _loading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3C5C5A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                  // Log in button (with hover effect)
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => _isLoginHovered = true),
+                    onExit: (_) => setState(() => _isLoginHovered = false),
+                    child: AnimatedScale(
+                      scale: _isLoginHovered ? 1.03 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isLoginHovered
+                              ? const Color(0xFF2F4F4D)
+                              : const Color(0xFF3C5C5A),
+                          elevation: _isLoginHovered ? 10 : 4,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'LOG IN',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                       ),
                     ),
-                    child: _loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'LOG IN',
-                            style:
-                                TextStyle(color: Colors.white, letterSpacing: 1),
-                          ),
                   ),
                   const SizedBox(height: 20),
 

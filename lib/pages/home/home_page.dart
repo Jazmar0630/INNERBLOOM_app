@@ -79,10 +79,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+  return Theme(
+  data: Theme.of(context).copyWith(
+    hoverColor: Colors.black.withOpacity(0.15), // 👈 darker hover
+    splashColor: Colors.black.withOpacity(0.20),
+    highlightColor: Colors.black.withOpacity(0.10),
+                ),
+    child: Scaffold(
       extendBody: true,
       drawer: const AppDrawer(),
-
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _navIndex,
@@ -274,6 +279,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
