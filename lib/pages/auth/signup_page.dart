@@ -4,7 +4,7 @@ import 'login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../drawer/privacy_policy.dart';
-
+import '../widgets/privacy_policy_overlay.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -24,6 +24,7 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _isSignUpHovered = false;
   bool agreeToPolicy = false;
   bool _loading = false;
+  bool _showPrivacyOverlay = false;
 
   @override
   void dispose() {
@@ -156,241 +157,254 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF3C5C5A), Color(0xFFD9D9D9)],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Sign Up',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'and start your journey today',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Username
-                  TextFormField(
-                    controller: _username,
-                    textInputAction: TextInputAction.next,
-                    decoration: _fieldDecoration('Username'),
-                    validator: _validateUsername,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email
-                  TextFormField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: _fieldDecoration('Email'),
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password
-                  TextFormField(
-                    controller: _password,
-                    obscureText: true,
-                    textInputAction: TextInputAction.next,
-                    decoration: _fieldDecoration('Password'),
-                    validator: _validatePassword,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Confirm Password
-                  TextFormField(
-                    controller: _confirmPassword,
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    decoration: _fieldDecoration('Confirm Password'),
-                    validator: (v) {
-                      if ((v ?? '').isEmpty) return 'Confirm your password';
-                      if (v != _password.text) return 'Passwords do not match';
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _loading ? null : _signup(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Privacy policy checkbox
-                  Row(
+      body: Stack(
+        children: [
+          // Main content
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF3C5C5A), Color(0xFFD9D9D9)],
+              ),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Checkbox(
-                        value: agreeToPolicy,
-                        onChanged: _loading
-                            ? null
-                            : (v) => setState(() => agreeToPolicy = v ?? false),
-                        activeColor: const Color(0xFF3C5C5A),
-                      ),
+                      const SizedBox(height: 8),
                       const Text(
-                        'I have read the ',
-                        style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
+                        'Sign Up',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                        TextButton(
+                      const SizedBox(height: 6),
+                      const Text(
+                        'and start your journey today',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Username
+                      TextFormField(
+                        controller: _username,
+                        textInputAction: TextInputAction.next,
+                        decoration: _fieldDecoration('Username'),
+                        validator: _validateUsername,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
+                      TextFormField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        decoration: _fieldDecoration('Email'),
+                        validator: _validateEmail,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: _password,
+                        obscureText: true,
+                        textInputAction: TextInputAction.next,
+                        decoration: _fieldDecoration('Password'),
+                        validator: _validatePassword,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Confirm Password
+                      TextFormField(
+                        controller: _confirmPassword,
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        decoration: _fieldDecoration('Confirm Password'),
+                        validator: (v) {
+                          if ((v ?? '').isEmpty) return 'Confirm your password';
+                          if (v != _password.text) return 'Passwords do not match';
+                          return null;
+                        },
+                        onFieldSubmitted: (_) => _loading ? null : _signup(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Privacy policy checkbox
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: agreeToPolicy,
+                            onChanged: _loading
+                                ? null
+                                : (v) => setState(() => agreeToPolicy = v ?? false),
+                            activeColor: const Color(0xFF3C5C5A),
+                          ),
+                          const Text(
+                            'I have read the ',
+                            style: TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
+                          ),
+                          TextButton(
                             onPressed: _loading
                                 ? null
                                 : () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
-                                    );
+                                    setState(() {
+                                      _showPrivacyOverlay = true;
+                                    });
                                   },
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                       ),
-
-                      child: const Text(
-                        'privacy policy',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 86, 91, 255),
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                  )
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Sign Up Button (with hover effect)
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    onEnter: (_) => setState(() => _isSignUpHovered = true),
-                    onExit: (_) => setState(() => _isSignUpHovered = false),
-                    child: AnimatedScale(
-                      scale: _isSignUpHovered ? 1.03 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: ElevatedButton(
-                        onPressed: _loading ? null : _signup,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isSignUpHovered
-                              ? const Color(0xFF2F4F4D)
-                              : const Color(0xFF3C5C5A),
-                          elevation: _isSignUpHovered ? 10 : 4,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: _loading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'SIGN UP',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  letterSpacing: 1,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            ),
+                            child: const Text(
+                              'privacy policy',
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 86, 91, 255),
+                                decoration: TextDecoration.underline,
                               ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Divider "or"
-                  Row(
-                    children: const [
-                      Expanded(child: Divider(color: Colors.white38)),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text('or',
-                            style: TextStyle(color: Colors.white70)),
-                      ),
-                      Expanded(child: Divider(color: Colors.white38)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Social row (placeholders)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _socialButton(Icons.g_mobiledata),
-                      const SizedBox(width: 16),
-                      _socialButton(Icons.facebook),
-                      const SizedBox(width: 16),
-                      _socialButton(Icons.apple),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Already have an account
-                  Center(
-                    child: Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 6,
-                      children: [
-                        const Text(
-                          'Already have an account?',
-                          style:
-                              TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
-                        ),
-
-                        // ✅ FIXED: proper clickable "Log in" link (darken on press/hover)
-                        TextButton(
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) => const LoginPage()),
-                                  );
-                                },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'Log in',
-                            style: TextStyle(
-                              color: Color.fromARGB(255, 86, 91, 255),
-                              decoration: TextDecoration.underline,
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Sign Up Button (with hover effect)
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        onEnter: (_) => setState(() => _isSignUpHovered = true),
+                        onExit: (_) => setState(() => _isSignUpHovered = false),
+                        child: AnimatedScale(
+                          scale: _isSignUpHovered ? 1.03 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _signup,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isSignUpHovered
+                                  ? const Color(0xFF2F4F4D)
+                                  : const Color(0xFF3C5C5A),
+                              elevation: _isSignUpHovered ? 10 : 4,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'SIGN UP',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      letterSpacing: 1,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Divider "or"
+                      Row(
+                        children: const [
+                          Expanded(child: Divider(color: Colors.white38)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text('or',
+                                style: TextStyle(color: Colors.white70)),
+                          ),
+                          Expanded(child: Divider(color: Colors.white38)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Social row (placeholders)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _socialButton(Icons.g_mobiledata),
+                          const SizedBox(width: 16),
+                          _socialButton(Icons.facebook),
+                          const SizedBox(width: 16),
+                          _socialButton(Icons.apple),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Already have an account
+                      Center(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          children: [
+                            const Text(
+                              'Already have an account?',
+                              style:
+                                  TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
+                            ),
+
+                            // ✅ FIXED: proper clickable "Log in" link (darken on press/hover)
+                            TextButton(
+                              onPressed: _loading
+                                  ? null
+                                  : () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) => const LoginPage()),
+                                      );
+                                    },
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Log in',
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 86, 91, 255),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+
+          // Privacy Policy Overlay
+          if (_showPrivacyOverlay)
+            PrivacyPolicyOverlay(
+              onClose: () {
+                setState(() {
+                  _showPrivacyOverlay = false;
+                });
+              },
+            ),
+        ],
       ),
     );
   }
