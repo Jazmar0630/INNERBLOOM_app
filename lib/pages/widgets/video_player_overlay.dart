@@ -108,6 +108,7 @@ class _VideoPlayerOverlayState extends State<VideoPlayerOverlay> {
         playsInline: true,
         enableJavaScript: true,
         mute: false,
+         origin: 'https://www.youtube-nocookie.com',
       ),
     );
 
