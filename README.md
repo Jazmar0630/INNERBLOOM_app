@@ -1,4 +1,4 @@
-# mental_app
+# INNERBLOOM_app
 
 A new Flutter project.
 
