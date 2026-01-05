@@ -66,7 +66,7 @@ class _MoodAppreciationPageState extends State<MoodAppreciationPage> {
                           ),
                         ),
                         TextSpan(
-                          text: " for checking in. You're taken a brave step today. A small progress is still a progress. We're so proud of you!",
+                          text: " for checking in. You've taken a brave step today. A small progress is still a progress. We're so proud of you!",
                         ),
                       ],
                     ),

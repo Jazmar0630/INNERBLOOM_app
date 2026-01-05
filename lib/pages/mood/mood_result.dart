@@ -121,7 +121,7 @@ class _MoodResultPageState extends State<MoodResultPage> {
     final a = _happinessAvg;
     if (a <= 2.0) return "You've been under a lot of pressure lately.";
     if (a <= 3.0) return "You might be feeling a bit stressed or tired.";
-    if (a <= 4.0) return "You seem fairly okay today — keep it up..";
+    if (a <= 4.0) return "You seem fairly okay today, keep it up..";
     return " You’re feeling great today! Keep maintaining that balance.";
   }
 
